@@ -81,15 +81,55 @@ void createToeplitz(int **inputToeplitz, int **filterFlattened, int ***input, in
     }
 }
 
+void matMul(int **output, int **matrixA, int matrixASize[2], int **matrixB, int matrixBSize[2]) {
+    int outputHeight = matrixASize[0];
+    int outputWidth = matrixBSize[1];
+
+    for (int idxOutRow = 0; idxOutRow < outputHeight; idxOutRow += 1) {
+        for (int idxOutCol = 0; idxOutCol < outputWidth; idxOutCol += 1) {
+            output[idxOutRow][idxOutCol] = 0;
+            for (int idxACol = 0; idxACol < matrixASize[1]; idxACol += 1) {
+                output[idxOutRow][idxOutCol] += matrixA[idxOutRow][idxACol] * matrixB[idxACol][idxOutCol];
+            }
+        }
+    }
+
+    return;
+}
+
+void reshape(int ***output, int outputShape[3], int **matrix, int matrixSize[2]) {
+    int numChannel = outputShape[2];
+    int outSize = outputShape[0];
+
+    int tmpRow = 0, tmpCol = 0;
+    for (int idxChannel = 0; idxChannel < numChannel; idxChannel += 1) {
+        for (int idxRow = 0; idxRow < outSize; idxRow += 1) {
+            for (int idxCol = 0; idxCol < outSize; idxCol += 1) {
+                output[idxChannel][idxRow][idxCol] = matrix[tmpRow][tmpCol];
+
+                tmpCol += 1;
+                if (tmpCol == matrixSize[1]) {
+                    tmpCol = 0;
+                    tmpRow += 1;
+                }
+            }
+        }
+    }
+
+    return;
+}
+
 void conv2d_4x2x2() {  // int input[3][4][4], int weights[2][3][2][2], int stride = 1) {
     cout << "Test conv2d 3x4x4 * 2x2x2" << endl;
+    int iToepSize[2] = {12, 9};
     int **iToep;
     iToep = new int *[12];
     for (int i = 0; i < 12; i++)
-        iToep[i] = new int[11];
+        iToep[i] = new int[9];
 
     cout << " Created iToep" << endl;
 
+    int fFattenSize[2] = {2, 12};
     int **fFatten;
     fFatten = new int *[2];
     for (int i = 0; i < 2; i++)
@@ -178,6 +218,48 @@ void conv2d_4x2x2() {  // int input[3][4][4], int weights[2][3][2][2], int strid
         for (int j = 0; j < 12; j++) {
             if (fFatten[i][j] < 10) cout << " ";
             cout << fFatten[i][j] << " ";
+        }
+        cout << endl;
+    }
+
+    int multipliedMatrixSize[2] = {2, 9};
+    int **multipliedMatrix;
+    multipliedMatrix = new int *[2];
+    for (int i = 0; i < 2; i++)
+        multipliedMatrix[i] = new int[12];
+
+    matMul(multipliedMatrix, fFatten, fFattenSize, iToep, iToepSize);
+
+    cout << "  Multiplied Matrices" << endl;
+
+    for (int i = 0; i < 2; i++) {
+        cout << "   ";
+        for (int j = 0; j < 9; j++) {
+            cout << multipliedMatrix[i][j] << " ";
+        }
+        cout << endl;
+    }
+
+    int reshapedOutputSize[3] = {3, 3, 2};
+    int ***reshapedOutput;
+    reshapedOutput = new int **[3];
+    for (int i = 0; i < 2; i++) {
+        reshapedOutput[i] = new int *[3];
+        for (int j = 0; j < 3; j++) {
+            reshapedOutput[i][j] = new int[3];
+        }
+    }
+
+    reshape(reshapedOutput, reshapedOutputSize, multipliedMatrix, multipliedMatrixSize);
+
+    cout << "  Reshaped output" << endl;
+    for (int c = 0; c < 2; c += 1) {
+        for (int i = 0; i < 3; i += 1) {
+            cout << "   ";
+            for (int j = 0; j < 3; j += 1) {
+                cout << reshapedOutput[c][i][j] << " ";
+            }
+            cout << endl;
         }
         cout << endl;
     }
