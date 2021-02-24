@@ -9,6 +9,28 @@ typedef int ts112x32[32][112][112];
 typedef int wts32x3[32][3][3][3];
 typedef int vt32[32];
 
+/**
+ * Calculate the Toeplitz matrix that will be created
+ **/
+int *calToeplitzSize(int inputShape[3], int filterShape[4], int stride) {
+    int iNumChannel = inputShape[2];
+    int iSize = inputShape[0];
+    int numFilter = filterShape[0];
+    int fSize = filterShape[1];
+    int oSize = (iSize - fSize) / stride + 1;
+
+    int inputToeplitzWidth = oSize * oSize;
+    int inputToeplitzHeight = fSize * fSize * iNumChannel;
+
+    int toepSize[2] = {inputToeplitzHeight, inputToeplitzWidth};
+
+    return toepSize;
+}
+
+/**
+ * Create Toeplitz matrix from input tensor,
+ * flatten weights tensors
+ **/
 void createToeplitz(int **inputToeplitz, int **filterFlattened, int ***input, int inputShape[3], int ****filter, int filterShape[4], int stride) {
     // Size of output
 
@@ -119,45 +141,78 @@ void reshape(int ***output, int outputShape[3], int **matrix, int matrixSize[2])
     return;
 }
 
+/**
+ * Create a 2D array with pointer
+ **/
+void createPointer2(int **&pointer, int size[2]) {
+    pointer = new int *[size[0]];
+    for (int i = 0; i < size[0]; i++)
+        pointer[i] = new int[size[1]];
+
+    return;
+}
+
+/**
+ * Create a 3D array with pointer
+ **/
+void createPointer3(int ***&pointer, int size[3]) {
+    pointer = new int **[size[2]];
+    for (int i = 0; i < size[2]; i++) {
+        pointer[i] = new int *[size[0]];
+        for (int j = 0; j < size[0]; j++) {
+            pointer[i][j] = new int[size[1]];
+        }
+    }
+
+    return;
+}
+
+/**
+ * Create a 4D array with pointer
+ **/
+void createPointer4(int ****&pointer, int size[4]) {
+    pointer = new int ***[size[0]];
+    for (int i = 0; i < size[0]; i++) {
+        pointer[i] = new int **[size[3]];
+        for (int j = 0; j < size[3]; j++) {
+            pointer[i][j] = new int *[size[1]];
+            for (int k = 0; k < size[1]; k++) {
+                pointer[i][j][k] = new int[size[2]];
+            }
+        }
+    }
+
+    return;
+}
+
 void conv2d_4x2x2() {  // int input[3][4][4], int weights[2][3][2][2], int stride = 1) {
     cout << "Test conv2d 3x4x4 * 2x2x2" << endl;
     int iToepSize[2] = {12, 9};
     int **iToep;
-    iToep = new int *[12];
-    for (int i = 0; i < 12; i++)
-        iToep[i] = new int[9];
+    createPointer2(iToep, iToepSize);
 
     cout << " Created iToep" << endl;
 
     int fFattenSize[2] = {2, 12};
     int **fFatten;
-    fFatten = new int *[2];
-    for (int i = 0; i < 2; i++)
-        fFatten[i] = new int[12];
+    createPointer2(fFatten, fFattenSize);
 
     cout << " Created fFatten" << endl;
 
     int inputShape[3] = {4, 4, 3};
     int ***input;
-    input = new int **[3];
-    for (int i = 0; i < 3; i++) {
-        input[i] = new int *[4];
-        for (int j = 0; j < 4; j++) {
-            input[i][j] = new int[4];
-            for (int k = 0; k < 4; k++)
-                input[i][j][k] = i * 16 + j * 4 + k + 1;
-        }
-    }
+    createPointer3(input, inputShape);
 
     cout << " Created input" << endl;
     cout << "  Input:" << endl;
-
     for (int i = 0; i < 3; i++) {
-        for (int y = 0; y < 4; y++) {
+        for (int j = 0; j < 4; j++) {
             cout << "   ";
-            for (int x = 0; x < 4; x++) {
-                if (input[i][y][x] < 10) cout << " ";
-                cout << input[i][y][x] << " ";
+            for (int k = 0; k < 4; k++) {
+                input[i][j][k] = i * 16 + j * 4 + k + 1;
+
+                if (input[i][j][k] < 10) cout << " ";
+                cout << input[i][j][k] << " ";
             }
 
             cout << endl;
@@ -166,7 +221,8 @@ void conv2d_4x2x2() {  // int input[3][4][4], int weights[2][3][2][2], int strid
 
     int weightsShape[4] = {2, 2, 2, 3};
     int ****weights;
-    weights = new int ***[2];
+    createPointer4(weights, weightsShape);
+
     for (int i = 0; i < 2; i++) {
         weights[i] = new int **[3];
         for (int j = 0; j < 4; j++) {
@@ -224,9 +280,7 @@ void conv2d_4x2x2() {  // int input[3][4][4], int weights[2][3][2][2], int strid
 
     int multipliedMatrixSize[2] = {2, 9};
     int **multipliedMatrix;
-    multipliedMatrix = new int *[2];
-    for (int i = 0; i < 2; i++)
-        multipliedMatrix[i] = new int[12];
+    createPointer2(multipliedMatrix, multipliedMatrixSize);
 
     matMul(multipliedMatrix, fFatten, fFattenSize, iToep, iToepSize);
 
@@ -242,13 +296,7 @@ void conv2d_4x2x2() {  // int input[3][4][4], int weights[2][3][2][2], int strid
 
     int reshapedOutputSize[3] = {3, 3, 2};
     int ***reshapedOutput;
-    reshapedOutput = new int **[3];
-    for (int i = 0; i < 2; i++) {
-        reshapedOutput[i] = new int *[3];
-        for (int j = 0; j < 3; j++) {
-            reshapedOutput[i][j] = new int[3];
-        }
-    }
+    createPointer3(reshapedOutput, reshapedOutputSize);
 
     reshape(reshapedOutput, reshapedOutputSize, multipliedMatrix, multipliedMatrixSize);
 
@@ -267,8 +315,8 @@ void conv2d_4x2x2() {  // int input[3][4][4], int weights[2][3][2][2], int strid
     return;
 }
 
-ts112x32 *conv2d_224x32(ts224x3 input, wts32x3 weights, vt32 biases, int stide_h = 2, int stride_w = 2) {
-    ts112x32 output;
+void conv2d_224x32(ts112x32 output, ts224x3 input, wts32x3 weights, vt32 biases, int stide_h = 2, int stride_w = 2) {
+    int iToep;
 
-    return &output;
+    return;
 }
