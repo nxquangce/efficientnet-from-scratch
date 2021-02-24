@@ -28,6 +28,14 @@ int *calToeplitzSize(int inputShape[3], int filterShape[4], int stride) {
 }
 
 /**
+ * Calculate the flatten filter matrix size for Toep transformation of the input
+ **/
+int *calFlattenFilterSize(int filterShape[4]) {
+    int size[2] = {filterShape[0], filterShape[1] * filterShape[2] * filterShape[3]};
+    return size;
+}
+
+/**
  * Create Toeplitz matrix from input tensor,
  * flatten weights tensors
  **/
@@ -315,8 +323,27 @@ void conv2d_4x2x2() {  // int input[3][4][4], int weights[2][3][2][2], int strid
     return;
 }
 
-void conv2d_224x32(ts112x32 output, ts224x3 input, wts32x3 weights, vt32 biases, int stide_h = 2, int stride_w = 2) {
-    int iToep;
+void conv2d(int ***&output, int ***input, int inputShape[3], int ****weights, int weightsShape[4], int *biases, int stride = 2) {
+    int *iToepSize = calToeplitzSize(inputShape, weightsShape, stride);
+    int **iToep;
+    createPointer2(iToep, iToepSize);
+
+    int *fFlattenSize = calFlattenFilterSize(weightsShape);
+    int **fFlatten;
+    createPointer2(fFlatten, fFlattenSize);
+
+    createToeplitz(iToep, fFlatten, input, inputShape, weights, weightsShape, stride);
+
+    int toepOutputSize[2] = {weightsShape[0], iToepSize[1]};
+    int **toepOutput;
+    createPointer2(toepOutput, toepOutputSize);
+
+    matMul(toepOutput, fFlatten, fFlattenSize, iToep, iToepSize);
+
+    int outputSize = (inputShape[0] - weightsShape[1]) / stride + 1;
+    int outputShape[3] = {weightsShape[0], outputSize, outputSize};
+    createPointer3(output, outputShape);
+    reshape(output, outputShape, toepOutput, toepOutputSize);
 
     return;
 }
