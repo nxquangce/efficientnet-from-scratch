@@ -2,6 +2,8 @@
 
 #include <iostream>
 
+#include "utils.h"
+
 using namespace std;
 
 typedef int ts224x3[3][224][224];
@@ -17,12 +19,12 @@ int *calToeplitzSize(int inputShape[3], int filterShape[4], int stride) {
     int iSize = inputShape[0];
     int numFilter = filterShape[0];
     int fSize = filterShape[1];
-    int oSize = (iSize - fSize) / stride + 1;
+    int oSize = ceil((iSize - fSize) / (float)stride + 1.0);
 
     int inputToeplitzWidth = oSize * oSize;
     int inputToeplitzHeight = fSize * fSize * iNumChannel;
 
-    int toepSize[2] = {inputToeplitzHeight, inputToeplitzWidth};
+    int *toepSize = new int[2]{inputToeplitzHeight, inputToeplitzWidth};
 
     return toepSize;
 }
@@ -31,7 +33,7 @@ int *calToeplitzSize(int inputShape[3], int filterShape[4], int stride) {
  * Calculate the flatten filter matrix size for Toep transformation of the input
  **/
 int *calFlattenFilterSize(int filterShape[4]) {
-    int size[2] = {filterShape[0], filterShape[1] * filterShape[2] * filterShape[3]};
+    int *size = new int[2]{filterShape[0], filterShape[1] * filterShape[2] * filterShape[3]};
     return size;
 }
 
@@ -54,7 +56,7 @@ void createToeplitz(int **inputToeplitz, int **filterFlattened, int ***input, in
     int iSize = inputShape[0];
     int numFilter = filterShape[0];
     int fSize = filterShape[1];
-    int oSize = (iSize - fSize) / stride + 1;
+    int oSize = ceil((iSize - fSize) / (float)stride + 1.0);
 
     cout << "  iNumChannel: " << iNumChannel << endl;
     cout << "  iSize:       " << iSize << endl;
@@ -82,7 +84,7 @@ void createToeplitz(int **inputToeplitz, int **filterFlattened, int ***input, in
         tmpRow = (int)(((idxToepRow + 1) % (fSize * fSize)) / fSize);
         tmpCol += 1;
         if (tmpCol == fSize) tmpCol = 0;
-        if ((idxToepRow % (fSize * fSize)) == 3) tmpChannel += 1;
+        if ((idxToepRow % (fSize * fSize)) == (fSize * fSize - 1)) tmpChannel += 1;
     }
 
     // Flatten filter
@@ -146,50 +148,6 @@ void reshape(int ***output, int outputShape[3], int **matrix, int matrixSize[2])
                     tmpCol = 0;
                     tmpRow += 1;
                 }
-            }
-        }
-    }
-
-    return;
-}
-
-/**
- * Create a 2D array with pointer
- **/
-void createPointer2(int **&pointer, int size[2]) {
-    pointer = new int *[size[0]];
-    for (int i = 0; i < size[0]; i++)
-        pointer[i] = new int[size[1]];
-
-    return;
-}
-
-/**
- * Create a 3D array with pointer
- **/
-void createPointer3(int ***&pointer, int size[3]) {
-    pointer = new int **[size[2]];
-    for (int i = 0; i < size[2]; i++) {
-        pointer[i] = new int *[size[0]];
-        for (int j = 0; j < size[0]; j++) {
-            pointer[i][j] = new int[size[1]];
-        }
-    }
-
-    return;
-}
-
-/**
- * Create a 4D array with pointer
- **/
-void createPointer4(int ****&pointer, int size[4]) {
-    pointer = new int ***[size[0]];
-    for (int i = 0; i < size[0]; i++) {
-        pointer[i] = new int **[size[3]];
-        for (int j = 0; j < size[3]; j++) {
-            pointer[i][j] = new int *[size[1]];
-            for (int k = 0; k < size[1]; k++) {
-                pointer[i][j][k] = new int[size[2]];
             }
         }
     }
@@ -327,7 +285,7 @@ void conv2d_4x2x2() {  // int input[3][4][4], int weights[2][3][2][2], int strid
     return;
 }
 
-void conv2d(int ***&output, int ***input, int inputShape[3], int ****weights, int weightsShape[4], int *biases, int stride = 2) {
+int *conv2d(int ***&output, int ***input, int inputShape[3], int ****weights, int weightsShape[4], int *biases, int stride = 2) {
     int *iToepSize = calToeplitzSize(inputShape, weightsShape, stride);
     int **iToep;
     createPointer2(iToep, iToepSize);
@@ -345,9 +303,15 @@ void conv2d(int ***&output, int ***input, int inputShape[3], int ****weights, in
     matMul(toepOutput, fFlatten, fFlattenSize, iToep, iToepSize, biases);
 
     int outputSize = (inputShape[0] - weightsShape[1]) / stride + 1;
-    int outputShape[3] = {outputSize, outputSize, weightsShape[0]};
+    int *outputShape = new int[3]{outputSize, outputSize, weightsShape[0]};
     createPointer3(output, outputShape);
     reshape(output, outputShape, toepOutput, toepOutputSize);
 
-    return;
+    delete2(iToep, iToepSize);
+    delete2(fFlatten, fFlattenSize);
+    delete[] iToepSize;
+    delete[] fFlattenSize;
+    delete2(toepOutput, toepOutputSize);
+
+    return outputShape;
 }

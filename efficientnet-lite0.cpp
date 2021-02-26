@@ -2,13 +2,15 @@
 
 #include <cstring>
 #include <iostream>
+#include <string>
 
 #include "conv.h"
+#include "utils.h"
 
 using namespace std;
 
 void parseLine(int *output, string line);
-void collect(FILE *fp, int *cmd, int ****&weights, int *&biases);
+int *collect(FILE *fp, int *cmd, int ****&weights, int *&biases);
 
 int main() {
     cout << "Efficientnet-lite0 int8" << endl;
@@ -27,20 +29,57 @@ int main() {
     int *biases;
 
     parseLine(cmd, line);
-    cout << "Parsed: " << cmd[0] << " " << cmd[1] << " " << cmd[2] << " " << cmd[3] << " " << cmd[4] << endl;
+    int numFilter = cmd[1];
+    int size = cmd[2];
+    int numChannel = cmd[4];
+
+    int weightsShape[4] = {numFilter, size, size, numChannel};
     collect(fp, cmd, weights, biases);
-    cout << "Collected" << endl;
-    for (int f = 0; f < 32; f++) {
-        for (int c = 0; c < 3; c++) {
-            for (int i = 0; i < 3; i++) {
-                for (int j = 0; j < 3; j++) {
-                    cout << weights[f][c][i][j] << " ";
-                }
-                cout << endl;
+    // print4(weights, weightsShape);
+
+    fgets(line, 100, fp);
+    line[strcspn(line, "\n")] = 0;
+    parseLine(cmd, line);
+    collect(fp, cmd, weights, biases);
+    int biasSize = cmd[1];
+    // print1(biases, 32);
+
+    int inputShape[3] = {224, 224, 3};
+    int ***input;
+    createPointer3(input, inputShape);
+
+    cout << " Created input" << endl;
+    for (int i = 0; i < inputShape[2]; i++) {
+        for (int j = 0; j < inputShape[0]; j++) {
+            // cout << "   ";
+            for (int k = 0; k < inputShape[1]; k++) {
+                input[i][j][k] = (i * 224 * 224 + j * 4 + k + 1) % 2;
+
+                // if (input[i][j][k] < 10) cout << " ";
+                // cout << input[i][j][k] << " ";
             }
-            cout << endl;
+
+            // cout << endl;
         }
     }
+
+    int ***output;
+    int *outputShape = conv2d(output, input, inputShape, weights, weightsShape, biases, 2);
+    // print3(output, outputShape);
+
+    FILE *fConvOut;
+    fConvOut = fopen("out_conv1.txt", "w+");
+    for (int i = 0; i < outputShape[2]; i++) {
+        for (int j = 0; j < outputShape[0]; j++) {
+            for (int k = 0; k < outputShape[1]; k++) {
+                if (output[i][j][k] < 10) cout << " ";
+                fputs((to_string(output[i][j][k]) + " ").c_str(), fConvOut);
+            }
+            fputs("\n", fConvOut);
+        }
+        fputs("\n", fConvOut);
+    }
+    fclose(fConvOut);
 
     fclose(fp);
 
@@ -83,7 +122,7 @@ void parseLine(int *output, string line) {
     }
 }
 
-void collect(FILE *fp, int *cmd, int ****&weights, int *&biases) {
+int *collect(FILE *fp, int *cmd, int ****&weights, int *&biases) {
     if (cmd[0] == 1) {
         int numFilter = cmd[1];
         int size = cmd[2];
@@ -140,18 +179,25 @@ void collect(FILE *fp, int *cmd, int ****&weights, int *&biases) {
 
         biases = new int[numBias];
 
-        char *line;
-        fgets(line, 100, fp);
-        line[strcspn(line, "\n")] = 0;
+        char lineRaw[200];
+        fgets(lineRaw, 200, fp);
+        lineRaw[strcspn(lineRaw, "\n")] = 0;
+        string line = string(lineRaw);
+
         string delimiter = " ";
         size_t pos = 0;
         int idx = 0;
-        while ((pos = string(line).find(delimiter)) != string::npos) {
-            const char *word = string(line).substr(0, pos).c_str();
-            string(line).erase(0, pos + delimiter.length());
+        while (line != "") {
+            pos = line.find(delimiter);
+            const char *word = (pos != string::npos) ? line.substr(0, pos).c_str() : line.substr(0).c_str();
+            if (pos == string::npos) pos = strlen(string(line).c_str()) - delimiter.length();
+            line.erase(0, pos + delimiter.length()).c_str();
 
             biases[idx] = charTOint(word);
             idx += 1;
         }
     }
+
+    for (int idx = 0; idx < 5; idx++)
+        cmd[idx] = 0;
 }
