@@ -46,5 +46,7 @@ run
 
 # Outputs
 out_*
+npy_weights.txt
+sweights.txt
 
 # End of https://www.toptal.com/developers/gitignore/api/c++

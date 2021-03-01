@@ -58,11 +58,13 @@ void createToeplitz(int **inputToeplitz, int **filterFlattened, int ***input, in
     int fSize = filterShape[1];
     int oSize = ceil((iSize - fSize) / (float)stride + 1.0);
 
+    cout << "--------------------" << endl;
     cout << "  iNumChannel: " << iNumChannel << endl;
     cout << "  iSize:       " << iSize << endl;
     cout << "  numFilter:   " << numFilter << endl;
     cout << "  fSize:       " << fSize << endl;
     cout << "  oSize:       " << oSize << endl;
+    cout << "--------------------" << endl;
 
     // Toeplitz output matrix
     int inputToeplitzWidth = oSize * oSize;
@@ -113,7 +115,8 @@ void createToeplitz(int **inputToeplitz, int **filterFlattened, int ***input, in
     }
 }
 
-void matMul(int **output, int **matrixA, int matrixASize[2], int **matrixB, int matrixBSize[2], int *biases) {
+void matMul(
+    int **output, int **matrixA, int matrixASize[2], int **matrixB, int matrixBSize[2], int *biases, int (*actFn)(int) = [](int x) { return x; }) {
     int outputHeight = matrixASize[0];
     int outputWidth = matrixBSize[1];
 
@@ -127,6 +130,7 @@ void matMul(int **output, int **matrixA, int matrixASize[2], int **matrixB, int 
             }
 
             output[idxOutRow][idxOutCol] += bias[idxOutRow];
+            output[idxOutRow][idxOutCol] = actFn(output[idxOutRow][idxOutCol]);
         }
     }
 
@@ -252,7 +256,7 @@ void conv2d_4x2x2() {  // int input[3][4][4], int weights[2][3][2][2], int strid
     int **multipliedMatrix;
     createPointer2(multipliedMatrix, multipliedMatrixSize);
 
-    matMul(multipliedMatrix, fFatten, fFattenSize, iToep, iToepSize, NULL);
+    matMul(multipliedMatrix, fFatten, fFattenSize, iToep, iToepSize, NULL, [](int x) { return x; });
 
     cout << "  Multiplied Matrices" << endl;
 
@@ -285,7 +289,8 @@ void conv2d_4x2x2() {  // int input[3][4][4], int weights[2][3][2][2], int strid
     return;
 }
 
-int *conv2d(int ***&output, int ***input, int inputShape[3], int ****weights, int weightsShape[4], int *biases, int stride = 2) {
+int *conv2d(
+    int ***&output, int ***input, int inputShape[3], int ****weights, int weightsShape[4], int *biases, int stride = 2, int (*actFn)(int) = [](int x) { return x; }) {
     int *iToepSize = calToeplitzSize(inputShape, weightsShape, stride);
     int **iToep;
     createPointer2(iToep, iToepSize);
@@ -300,9 +305,9 @@ int *conv2d(int ***&output, int ***input, int inputShape[3], int ****weights, in
     int **toepOutput;
     createPointer2(toepOutput, toepOutputSize);
 
-    matMul(toepOutput, fFlatten, fFlattenSize, iToep, iToepSize, biases);
+    matMul(toepOutput, fFlatten, fFlattenSize, iToep, iToepSize, biases, actFn);
 
-    int outputSize = (inputShape[0] - weightsShape[1]) / stride + 1;
+    int outputSize = ceil((inputShape[0] - weightsShape[1]) / (float)stride + 1.0);
     int *outputShape = new int[3]{outputSize, outputSize, weightsShape[0]};
     createPointer3(output, outputShape);
     reshape(output, outputShape, toepOutput, toepOutputSize);

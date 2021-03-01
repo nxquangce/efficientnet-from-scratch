@@ -4,6 +4,7 @@
 #include <iostream>
 #include <string>
 
+#include "activation.h"
 #include "conv.h"
 #include "utils.h"
 
@@ -19,15 +20,38 @@ int main() {
     fp = fopen("weights.txt", "r");
     if (fp == NULL) perror("Error opening file");
 
-    char line[100];
-    fgets(line, 100, fp);
-    line[strcspn(line, "\n")] = 0;
-    int cmd[5] = {};
+    // Input
+    // TODO: Repalce below code: Use opencv to read an image
 
-    // Conv2d - 1
+    cout << " Created input" << endl;
+    int inputShape[3] = {224, 224, 3};
+    int ***input;
+    createPointer3(input, inputShape);
+
+    for (int i = 0; i < inputShape[2]; i++) {
+        for (int j = 0; j < inputShape[0]; j++) {
+            // cout << "   ";
+            for (int k = 0; k < inputShape[1]; k++) {
+                input[i][j][k] = (i * 224 * 224 + j * 4 + k + 1) % 2;
+
+                // if (input[i][j][k] < 10) cout << " ";
+                // cout << input[i][j][k] << " ";
+            }
+
+            // cout << endl;
+        }
+    }
+
+    char line[100];
+    int cmd[5] = {};
     int ****weights;
     int *biases;
 
+    ///////////////////////////////////////////////////////////////////////////
+    // Conv2d - 1
+    ///////////////////////////////////////////////////////////////////////////
+    fgets(line, 100, fp);
+    line[strcspn(line, "\n")] = 0;
     parseLine(cmd, line);
     int numFilter = cmd[1];
     int size = cmd[2];
@@ -44,36 +68,54 @@ int main() {
     int biasSize = cmd[1];
     // print1(biases, 32);
 
-    int inputShape[3] = {224, 224, 3};
-    int ***input;
-    createPointer3(input, inputShape);
-
-    cout << " Created input" << endl;
-    for (int i = 0; i < inputShape[2]; i++) {
-        for (int j = 0; j < inputShape[0]; j++) {
-            // cout << "   ";
-            for (int k = 0; k < inputShape[1]; k++) {
-                input[i][j][k] = (i * 224 * 224 + j * 4 + k + 1) % 2;
-
-                // if (input[i][j][k] < 10) cout << " ";
-                // cout << input[i][j][k] << " ";
-            }
-
-            // cout << endl;
-        }
-    }
-
-    int ***output;
-    int *outputShape = conv2d(output, input, inputShape, weights, weightsShape, biases, 2);
+    int ***output0;
+    int *outputShape0 = conv2d(output0, input, inputShape, weights, weightsShape, biases, 2, relu6);
     // print3(output, outputShape);
 
+    delete[] biases;
+    delete4(weights, weightsShape);
+    cout << line << endl;
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Depthwise Conv2d - 2
+    ///////////////////////////////////////////////////////////////////////////
+    fgets(line, 100, fp);
+    line[strcspn(line, "\n")] = 0;
+    cout << line << endl;
+    parseLine(cmd, line);
+    numFilter = cmd[1];
+    size = cmd[2];
+    numChannel = cmd[4];
+
+    weightsShape[0] = numFilter;
+    weightsShape[1] = size;
+    weightsShape[2] = size;
+    weightsShape[3] = numChannel;
+    collect(fp, cmd, weights, biases);
+    // print4(weights, weightsShape);
+
+    fgets(line, 100, fp);
+    line[strcspn(line, "\n")] = 0;
+    parseLine(cmd, line);
+    collect(fp, cmd, weights, biases);
+    biasSize = cmd[1];
+    // print1(biases, 32);
+
+    int ***output1;
+    int *outputShape1 = conv2d(output1, output0, outputShape0, weights, weightsShape, biases, 1, relu6);
+    // print3(output, outputShape);
+
+    delete[] biases;
+    delete4(weights, weightsShape);
+
+    
+    ///////////////////////////////////////////////////////////////////////////
     FILE *fConvOut;
     fConvOut = fopen("out_conv1.txt", "w+");
-    for (int i = 0; i < outputShape[2]; i++) {
-        for (int j = 0; j < outputShape[0]; j++) {
-            for (int k = 0; k < outputShape[1]; k++) {
-                if (output[i][j][k] < 10) cout << " ";
-                fputs((to_string(output[i][j][k]) + " ").c_str(), fConvOut);
+    for (int i = 0; i < outputShape1[2]; i++) {
+        for (int j = 0; j < outputShape1[0]; j++) {
+            for (int k = 0; k < outputShape1[1]; k++) {
+                fputs((to_string(output1[i][j][k]) + " ").c_str(), fConvOut);
             }
             fputs("\n", fConvOut);
         }
@@ -179,8 +221,8 @@ int *collect(FILE *fp, int *cmd, int ****&weights, int *&biases) {
 
         biases = new int[numBias];
 
-        char lineRaw[200];
-        fgets(lineRaw, 200, fp);
+        char lineRaw[300];
+        fgets(lineRaw, 300, fp);
         lineRaw[strcspn(lineRaw, "\n")] = 0;
         string line = string(lineRaw);
 

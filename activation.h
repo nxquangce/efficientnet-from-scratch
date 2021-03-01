@@ -1,1 +1,1 @@
-int relu6(int value)
+int relu6(int value);

@@ -86,4 +86,21 @@ void delete2(int **pointer, int size[2]) {
         delete[] pointer[i];
     }
     delete[] pointer;
+
+    return;
+}
+
+void delete4(int ****&pointer, int size[4]) {
+    for (int i = 0; i < size[0]; i++) {
+        for (int j = 0; j < size[3]; j++) {
+            for (int k = 0; k < size[1]; k++) {
+                delete[] pointer[i][j][k];
+            }
+            delete[] pointer[i][j];
+        }
+        delete[] pointer[i];
+    }
+    delete[] pointer;
+
+    return;
 }
