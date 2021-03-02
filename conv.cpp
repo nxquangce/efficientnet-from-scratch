@@ -11,6 +11,35 @@ typedef int ts112x32[32][112][112];
 typedef int wts32x3[32][3][3][3];
 typedef int vt32[32];
 
+int *paddingSame(int ***&output, int ***input, int inputShape[3], int filterShape[4]) {
+    int numPad = (filterShape[1] - 1) / 2;
+    if (numPad == 0) {
+        output = input;
+        int *outputShape = inputShape;
+        return outputShape;
+    }
+
+    int *outputShape = new int[3]{inputShape[0] + numPad * 2, inputShape[1] + numPad * 2, inputShape[2]};
+    createPointer3(output, outputShape);
+
+    for (int idxChannel = 0; idxChannel < outputShape[2]; idxChannel += 1) {
+        for (int idx = 0; idx < outputShape[1]; idx += 1) {
+            output[idxChannel][0][idx] = 0;
+            output[idxChannel][outputShape[0] - 1][idx] = 0;
+        }
+    }
+
+    for (int idxChannel = 0; idxChannel < outputShape[2]; idxChannel += 1) {
+        for (int idxRow = 1; idxRow < outputShape[0] - 1; idxRow += 1) {
+            for (int idxCol = 0; idxCol < outputShape[1]; idxCol += 1) {
+                output[idxChannel][idxRow][idxCol] = ((idxCol == 0) || (idxCol == (outputShape[1] - 1))) ? 0 : input[idxChannel][idxRow - 1][idxCol - 1];
+            }
+        }
+    }
+
+    return outputShape;
+}
+
 /**
  * Calculate the Toeplitz matrix that will be created
  **/
@@ -120,7 +149,9 @@ void matMul(
     int outputHeight = matrixASize[0];
     int outputWidth = matrixBSize[1];
 
-    int *bias = (!biases) ? biases : new int[outputHeight]();
+    int *bias = (biases) ? biases : new int[outputHeight];
+
+    // for (int idx = 0; idx < outputHeight; idx += 1) bias[idx] = 0;
 
     for (int idxOutRow = 0; idxOutRow < outputHeight; idxOutRow += 1) {
         for (int idxOutCol = 0; idxOutCol < outputWidth; idxOutCol += 1) {
@@ -227,7 +258,12 @@ void conv2d_4x2x2() {  // int input[3][4][4], int weights[2][3][2][2], int strid
         cout << endl;
     }
 
-    createToeplitz(iToep, fFatten, input, inputShape, weights, weightsShape, 1);
+    int ***iInput;
+    int *iInputShape = paddingSame(iInput, input, inputShape, weightsShape);
+    cout << "  Padding input:" << endl;
+    print3(iInput, iInputShape);
+
+    createToeplitz(iToep, fFatten, iInput, iInputShape, weights, weightsShape, 1);
 
     cout << " Calculated Toeplitz" << endl;
     cout << "  Toeplitz:" << endl;
@@ -291,6 +327,9 @@ void conv2d_4x2x2() {  // int input[3][4][4], int weights[2][3][2][2], int strid
 
 int *conv2d(
     int ***&output, int ***input, int inputShape[3], int ****weights, int weightsShape[4], int *biases, int stride = 2, int (*actFn)(int) = [](int x) { return x; }) {
+    int ***iPadding;
+    int *iPaddingShape = paddingSame(iPadding, input, inputShape, weightsShape);
+
     int *iToepSize = calToeplitzSize(inputShape, weightsShape, stride);
     int **iToep;
     createPointer2(iToep, iToepSize);
@@ -299,7 +338,7 @@ int *conv2d(
     int **fFlatten;
     createPointer2(fFlatten, fFlattenSize);
 
-    createToeplitz(iToep, fFlatten, input, inputShape, weights, weightsShape, stride);
+    createToeplitz(iToep, fFlatten, iPadding, iPaddingShape, weights, weightsShape, stride);
 
     int toepOutputSize[2] = {weightsShape[0], iToepSize[1]};
     int **toepOutput;
