@@ -86,6 +86,7 @@ void delete2(int **pointer, int size[2]) {
         delete[] pointer[i];
     }
     delete[] pointer;
+    pointer = NULL;
 
     return;
 }
@@ -101,6 +102,7 @@ void delete4(int ****&pointer, int size[4]) {
         delete[] pointer[i];
     }
     delete[] pointer;
+    pointer = NULL;
 
     return;
 }

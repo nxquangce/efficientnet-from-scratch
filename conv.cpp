@@ -1,9 +1,9 @@
 #include <math.h>
+#include <unistd.h>
 
 #include <iostream>
 
 #include "utils.h"
-
 using namespace std;
 
 typedef int ts224x3[3][224][224];
@@ -85,7 +85,11 @@ void createToeplitz(int **inputToeplitz, int **filterFlattened, int ***input, in
     int iSize = inputShape[0];
     int numFilter = filterShape[0];
     int fSize = filterShape[1];
-    int oSize = ceil((iSize - fSize) / (float)stride + 1.0);
+    // VALID padding
+    // int oSize = ceil((iSize - fSize) / (float)stride + 1.0);
+
+    // SAME padding
+    int oSize = ceil((iSize - ((fSize - 1))) / (float)stride);
 
     cout << "--------------------" << endl;
     cout << "  iNumChannel: " << iNumChannel << endl;
@@ -341,9 +345,11 @@ int *conv2d(
     createToeplitz(iToep, fFlatten, iPadding, iPaddingShape, weights, weightsShape, stride);
 
     int toepOutputSize[2] = {weightsShape[0], iToepSize[1]};
+    cout << "[dbg] conv2d 2.2" << endl;
+    cout << toepOutputSize[0] << " x " << toepOutputSize[1] << endl;
     int **toepOutput;
     createPointer2(toepOutput, toepOutputSize);
-
+    cout << "[Dbg] conv2d 3" << endl;
     matMul(toepOutput, fFlatten, fFlattenSize, iToep, iToepSize, biases, actFn);
 
     int outputSize = ceil((inputShape[0] - weightsShape[1]) / (float)stride + 1.0);
