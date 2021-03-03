@@ -1,7 +1,7 @@
 TARGET = run
 
 CXX = g++
-CXXFLAGS = -std=c++0x -Wall
+CXXFLAGS = -std=c++0x -Wall -g
 OBJECTS = efficientnet-lite0.o conv.o activation.o utils.o
 
 all: $(TARGET)

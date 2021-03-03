@@ -48,7 +48,11 @@ int *calToeplitzSize(int inputShape[3], int filterShape[4], int stride) {
     int iSize = inputShape[0];
     int numFilter = filterShape[0];
     int fSize = filterShape[1];
-    int oSize = ceil((iSize - fSize) / (float)stride + 1.0);
+    // VALID padding
+    // int oSize = ceil((iSize - fSize) / (float)stride + 1.0);
+    // SAME padding
+    int oSize = ceil((iSize - ((fSize - 1))) / (float)stride);
+    cout << oSize << endl;
 
     int inputToeplitzWidth = oSize * oSize;
     int inputToeplitzHeight = fSize * fSize * iNumChannel;
@@ -71,8 +75,6 @@ int *calFlattenFilterSize(int filterShape[4]) {
  * flatten weights tensors
  **/
 void createToeplitz(int **inputToeplitz, int **filterFlattened, int ***input, int inputShape[3], int ****filter, int filterShape[4], int stride) {
-    // Size of output
-
     // for array
     // int iNumChannel = int(sqrt(sizeof(input) / sizeof(*input)));
     // int iSize = int(sqrt(sizeof(input[0]) / sizeof(*input[0])));
@@ -97,6 +99,7 @@ void createToeplitz(int **inputToeplitz, int **filterFlattened, int ***input, in
     cout << "  numFilter:   " << numFilter << endl;
     cout << "  fSize:       " << fSize << endl;
     cout << "  oSize:       " << oSize << endl;
+    cout << "  stride:      " << stride << endl;
     cout << "--------------------" << endl;
 
     // Toeplitz output matrix
@@ -334,7 +337,7 @@ int *conv2d(
     int ***iPadding;
     int *iPaddingShape = paddingSame(iPadding, input, inputShape, weightsShape);
 
-    int *iToepSize = calToeplitzSize(inputShape, weightsShape, stride);
+    int *iToepSize = calToeplitzSize(iPaddingShape, weightsShape, stride);
     int **iToep;
     createPointer2(iToep, iToepSize);
 
@@ -345,11 +348,8 @@ int *conv2d(
     createToeplitz(iToep, fFlatten, iPadding, iPaddingShape, weights, weightsShape, stride);
 
     int toepOutputSize[2] = {weightsShape[0], iToepSize[1]};
-    cout << "[dbg] conv2d 2.2" << endl;
-    cout << toepOutputSize[0] << " x " << toepOutputSize[1] << endl;
     int **toepOutput;
     createPointer2(toepOutput, toepOutputSize);
-    cout << "[Dbg] conv2d 3" << endl;
     matMul(toepOutput, fFlatten, fFlattenSize, iToep, iToepSize, biases, actFn);
 
     int outputSize = ceil((inputShape[0] - weightsShape[1]) / (float)stride + 1.0);
