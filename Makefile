@@ -8,6 +8,7 @@ all: $(TARGET)
 
 $(TARGET): $(OBJECTS)
 	$(CXX) $(CXXFLAGS) -o $(TARGET) $(OBJECTS)
+	rm -f $(OBJECTS)
 
 clean:
 	rm -f $(OBJECTS) $(TARGET) *~

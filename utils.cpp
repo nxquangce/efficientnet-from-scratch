@@ -1,6 +1,33 @@
+#include <cstring>
 #include <iostream>
 
 using namespace std;
+
+unsigned charTOunsigned(const char *c) {
+    char p = *c;
+    unsigned ergebnis = 0;
+    while (p) {
+        ergebnis = ergebnis * 10 + (p - '0');
+        c++;
+        p = *c;
+    }
+    return ergebnis;
+}
+
+int charTOint(const char *c) {
+    return (*c == '-') ? -charTOunsigned(c + 1) : charTOunsigned(c);
+}
+
+const char *popWord(string &line, string delimiter, size_t &pos) {
+    pos = line.find(delimiter);
+    const char *word = (pos == string::npos) ? line.substr(0, line.length()).c_str() : line.substr(0, pos).c_str();
+    char *returnWord = new char[strlen(word)];
+    strcpy(returnWord, word);
+    size_t posDel = (pos == string::npos) ? line.length() : pos;
+    line.erase(0, posDel + delimiter.length());
+
+    return returnWord;
+}
 
 void print1(int *pointer, int size) {
     for (int i = 0; i < size; i++) {
@@ -115,6 +142,29 @@ void delete4(int ****&pointer, int size[4]) {
     }
     delete[] pointer;
     pointer = NULL;
+
+    return;
+}
+
+void copy1(int *&output, int *input, int size) {
+    output = new int[size];
+    for (int i = 0; i < size; i++)
+        output[i] = input[i];
+
+    return;
+}
+
+void copy3(int ***&output, int ***input, int shape[3]) {
+    output = new int **[shape[2]];
+    for (int i = 0; i < shape[2]; i++) {
+        output[i] = new int *[shape[0]];
+        for (int j = 0; j < shape[0]; j++) {
+            output[i][j] = new int[shape[1]];
+            for (int k = 0; k < shape[1]; k++) {
+                output[i][j][k] = input[i][j][k];
+            }
+        }
+    }
 
     return;
 }

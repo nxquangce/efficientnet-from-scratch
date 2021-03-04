@@ -49,4 +49,7 @@ out_*
 npy_weights.txt
 sweights.txt
 
+*.npy
+l*
+
 # End of https://www.toptal.com/developers/gitignore/api/c++

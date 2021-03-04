@@ -9,3 +9,4 @@ int *conv2d(
     int ***&output, int ***input, int inputShape[3], int ****weights, int weightsShape[4], int *biases, int stride = 2, int (*actFn)(int) = [](int x) { return x; });
 int *conv2d_depthwise(
     int ***&output, int ***input, int inputShape[3], int ****weights, int weightsShape[4], int *biases, int stride = 2, int (*actFn)(int) = [](int x) { return x; });
+int *add(int ***&output, int ***matrixA, int ***matrixB, int shape[3]);
