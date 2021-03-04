@@ -102,20 +102,55 @@ int main() {
     // print1(biases, 32);
 
     int ***output1;
-    int *outputShape1 = conv2d(output1, output0, outputShape0, weights, weightsShape, biases, 1, relu6);
+    cout << outputShape0[0] << "x" << outputShape0[1] << "x" << outputShape0[2] << endl;
+    int *outputShape1 = conv2d_depthwise(output1, output0, outputShape0, weights, weightsShape, biases, 1, relu6);
     // print3(output, outputShape);
 
     delete[] biases;
     delete4(weights, weightsShape);
 
-    
+    ///////////////////////////////////////////////////////////////////////////
+    // Conv2d - 3
+    ///////////////////////////////////////////////////////////////////////////
+    fgets(line, 100, fp);
+    line[strcspn(line, "\n")] = 0;
+    cout << line << endl;
+    parseLine(cmd, line);
+    numFilter = cmd[1];
+    size = cmd[2];
+    numChannel = cmd[4];
+
+    weightsShape[0] = numFilter;
+    weightsShape[1] = size;
+    weightsShape[2] = size;
+    weightsShape[3] = numChannel;
+    collect(fp, cmd, weights, biases);
+    // print4(weights, weightsShape);
+
+    fgets(line, 100, fp);
+    line[strcspn(line, "\n")] = 0;
+    parseLine(cmd, line);
+    collect(fp, cmd, weights, biases);
+    biasSize = cmd[1];
+    // print1(biases, 32);
+
+    delete3(output0, outputShape0);
+    delete[] outputShape0;
+
+    cout << outputShape1[0] << "x" << outputShape1[1] << "x" << outputShape1[2] << endl;
+    outputShape0 = conv2d(output0, output1, outputShape1, weights, weightsShape, biases, 1, relu6);
+    // print3(output, outputShape);
+
+    delete[] biases;
+    delete4(weights, weightsShape);
+
     ///////////////////////////////////////////////////////////////////////////
     FILE *fConvOut;
     fConvOut = fopen("out_conv1.txt", "w+");
-    for (int i = 0; i < outputShape1[2]; i++) {
-        for (int j = 0; j < outputShape1[0]; j++) {
-            for (int k = 0; k < outputShape1[1]; k++) {
-                fputs((to_string(output1[i][j][k]) + " ").c_str(), fConvOut);
+    for (int i = 0; i < outputShape0[2]; i++) {
+        for (int j = 0; j < outputShape0[0]; j++) {
+            for (int k = 0; k < outputShape0[1]; k++) {
+                fputs((to_string(output0[i][j][k]) + " ").c_str(), fConvOut);
             }
             fputs("\n", fConvOut);
         }

@@ -5,4 +5,5 @@ void createPointer2(int **&pointer, int size[2]);
 void createPointer3(int ***&pointer, int size[3]);
 void createPointer4(int ****&pointer, int size[4]);
 void delete2(int **pointer, int size[2]);
+void delete3(int ***&pointer, int size[3]);
 void delete4(int ****&pointer, int size[4]);
