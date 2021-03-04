@@ -57,6 +57,7 @@ int main() {
     int *biases;
 
     bool pingpong = true;
+    int layerCount = 1;
 
     int ***output0;
     int *outputShape0;
@@ -70,6 +71,7 @@ int main() {
     outputShape1 = inputShape;
 
     while (fgets(line, 100, fp)) {
+        cout << "# " << layerCount << endl;
         // fgets(line, 100, fp);
         line[strcspn(line, "\n")] = 0;
         parseLine(cmd, line);
@@ -164,10 +166,11 @@ int main() {
 
                 delete3(output1, outputShape1);
             } else {
-                if (layerCmd[3] == RELU6)
+                if (layerCmd[3] == RELU6) {
                     outputShape1 = conv2d_depthwise(output1, output0, outputShape0, weights, weightsShape, biases, stride, relu6);
-                else
+                } else {
                     outputShape1 = conv2d_depthwise(output1, output0, outputShape0, weights, weightsShape, biases, stride);
+                }
 
                 if (layerCmd[4] == 1) {
                     copy3(mem, output0, outputShape0);
@@ -177,18 +180,28 @@ int main() {
                 delete3(output0, outputShape0);
             }
 
-            // print3(output, outputShape);
-
             delete[] biases;
             delete4(weights, weightsShape);
         }
 
         if (layerCmd[0] == ADD) {
+            cout << "============================" << endl;
+            cout << "|            Add           |" << endl;
+            cout << "----------------------------" << endl;
+            cout << "  Input 1 shape: " << memShape[0] << "x" << memShape[1] << "x" << memShape[2] << endl;
+
             if (pingpong) {
                 outputShape0 = add(output0, mem, output1, memShape);
+                cout << "  Input 2 shape: " << outputShape1[0] << "x" << outputShape1[1] << "x" << outputShape1[2] << endl;
             } else {
                 outputShape1 = add(output1, mem, output0, memShape);
+                cout << "  Input 2 shape: " << outputShape0[0] << "x" << outputShape0[1] << "x" << outputShape0[2] << endl;
             }
+
+            cout << "============================" << endl;
+
+            delete3(mem, memShape);
+            delete[] memShape;
         }
 
         if (layerCmd[3] == RELU6) {
@@ -197,6 +210,7 @@ int main() {
         }
 
         pingpong = !pingpong;
+        layerCount++;
         cout << endl;
     }
 
@@ -401,8 +415,8 @@ int *collect(FILE *fp, int *cmd, int ****&weights, int *&biases) {
 
         biases = new int[numBias];
 
-        char lineRaw[800];
-        fgets(lineRaw, 800, fp);
+        char lineRaw[1500];
+        fgets(lineRaw, 1500, fp);
         lineRaw[strcspn(lineRaw, "\n")] = 0;
         string line = string(lineRaw);
 

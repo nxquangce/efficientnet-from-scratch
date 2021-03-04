@@ -23,16 +23,18 @@ int *paddingSame(int ***&output, int ***input, int inputShape[3], int filterShap
     createPointer3(output, outputShape);
 
     for (int idxChannel = 0; idxChannel < outputShape[2]; idxChannel += 1) {
-        for (int idx = 0; idx < outputShape[1]; idx += 1) {
-            output[idxChannel][0][idx] = 0;
-            output[idxChannel][outputShape[0] - 1][idx] = 0;
+        for (int idxPad = 0; idxPad < numPad; idxPad += 1) {
+            for (int idx = 0; idx < outputShape[1]; idx += 1) {
+                output[idxChannel][idxPad][idx] = 0;
+                output[idxChannel][outputShape[0] - idxPad - 1][idx] = 0;
+            }
         }
     }
 
     for (int idxChannel = 0; idxChannel < outputShape[2]; idxChannel += 1) {
-        for (int idxRow = 1; idxRow < outputShape[0] - 1; idxRow += 1) {
+        for (int idxRow = numPad; idxRow < outputShape[0] - numPad; idxRow += 1) {
             for (int idxCol = 0; idxCol < outputShape[1]; idxCol += 1) {
-                output[idxChannel][idxRow][idxCol] = ((idxCol == 0) || (idxCol == (outputShape[1] - 1))) ? 0 : input[idxChannel][idxRow - 1][idxCol - 1];
+                output[idxChannel][idxRow][idxCol] = (((idxCol >= 0) && (idxCol < numPad)) || ((idxCol >= (outputShape[1] - numPad) && (idxCol <= (outputShape[1] - 1))))) ? 0 : input[idxChannel][idxRow - numPad][idxCol - numPad];
             }
         }
     }
