@@ -202,6 +202,18 @@ int main() {
 
             delete3(mem, memShape);
             delete[] memShape;
+
+            if (layerCmd[1] == 1) {
+                if (pingpong) {
+                    copy3(mem, output0, outputShape0);
+                    copy1(memShape, outputShape0, 3);
+                } else {
+                    if (layerCmd[1] == 1) {
+                        copy3(mem, output1, outputShape1);
+                        copy1(memShape, outputShape1, 3);
+                    }
+                }
+            }
         }
 
         if (layerCmd[3] == RELU6) {
@@ -415,8 +427,8 @@ int *collect(FILE *fp, int *cmd, int ****&weights, int *&biases) {
 
         biases = new int[numBias];
 
-        char lineRaw[1500];
-        fgets(lineRaw, 1500, fp);
+        char lineRaw[9000];
+        fgets(lineRaw, 9000, fp);
         lineRaw[strcspn(lineRaw, "\n")] = 0;
         string line = string(lineRaw);
 
