@@ -168,3 +168,15 @@ void copy3(int ***&output, int ***input, int shape[3]) {
 
     return;
 }
+
+int *reshapey1xtxy(int **&output, int ***input, int inputShape[3]) {
+    int *outputSize = new int[2]{inputShape[1], inputShape[2]};
+    createPointer2(output, outputSize);
+    for (int idxRow = 0; idxRow < outputSize[0]; idxRow += 1) {
+        for (int idxCol = 0; idxCol < outputSize[1]; idxCol += 1) {
+            output[idxRow][idxCol] = input[idxCol][0][idxRow];
+        }
+    }
+
+    return outputSize;
+}

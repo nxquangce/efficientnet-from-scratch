@@ -1,3 +1,4 @@
+#include <string>
 using namespace std;
 int charTOint(const char *c);
 const char *popWord(string &line, string delimiter, size_t &pos);
@@ -12,3 +13,4 @@ void delete3(int ***&pointer, int size[3]);
 void delete4(int ****&pointer, int size[4]);
 void copy1(int *&output, int *input, int size);
 void copy3(int ***&output, int ***input, int shape[3]);
+int *reshapey1xtxy(int **&output, int ***input, int inputShape[3]);
