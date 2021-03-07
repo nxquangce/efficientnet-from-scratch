@@ -9,6 +9,33 @@ int relu6(int value) {
     return value;
 }
 
+double *softmax(int *input, int size) {
+    double *expInput = new double[size];
+    double *output = new double[size];
+    double expSum = 0.0;
+
+    // Prevent overflow
+    int maxInput = input[0];
+    for (int idx = 0; idx < size; idx += 1) {
+        if (input[idx] > maxInput) maxInput = input[idx];
+    }
+
+    for (int idx = 0; idx < size; idx += 1) {
+        expInput[idx] = exp((double)(input[idx] - maxInput));
+        expSum += expInput[idx];
+        // cout << input[idx] << " -> " << input[idx] - maxInput << " -> " << expInput[idx] << " -> " << expSum << endl;
+    }
+
+    for (int idx = 0; idx < size; idx += 1) {
+        output[idx] = expInput[idx] / expSum;
+        // cout << idx << ": " << expInput[idx] << " / " << expSum << " = " << output[idx] << endl;
+    }
+
+    delete[] expInput;
+
+    return output;
+}
+
 int *pool2dAverage(int ***&output, int ***input, int inputShape[3], int filterShape[2], int stride) {
     int outputSize = ceil((inputShape[0] - filterShape[0]) / (float)stride + 1);
     int *outputShape = new int[3]{outputSize, outputSize, inputShape[2]};

@@ -73,6 +73,8 @@ int main() {
     int *output2dShape0;
     int **output2d1;
     int *output2dShape1;
+    double *finalOutput;
+    int finalOutputSize;
 
     // First
     output1 = input;
@@ -333,9 +335,20 @@ int main() {
                 createPointer2(output2d1, output2dShape1);
                 matMul(output2d1, output2d0, output2dShape0, weight, weightShape, biases);
                 cout << "  Output shape : " << output2dShape1[0] << "x" << output2dShape1[1] << endl;
-
             }
-            cout << "============================" << endl;
+
+            if (layerCmd[1] == SOFTMAX) {
+                cout << "----------------------------" << endl;
+                cout << "|          Softmax         |" << endl;
+                cout << "============================" << endl;
+                if (pingpong) {
+                    finalOutputSize = output2dShape0[1];
+                    finalOutput = softmax(output2d0[0], finalOutputSize);
+                } else {
+                    finalOutputSize = output2dShape1[1];
+                    finalOutput = softmax(output2d1[0], finalOutputSize);
+                }
+            }
 
             delete2(weight, weightShape);
         }
@@ -344,6 +357,17 @@ int main() {
         layerCount++;
         cout << endl;
     }
+
+    int top = finalOutput[0];
+    int topIdx = 0;
+    for (int idx = 0; idx < finalOutputSize; idx += 1) {
+        if (finalOutput[idx] > top) {
+            top = finalOutput[idx];
+            topIdx = idx;
+        }
+    }
+
+    cout << "Top: " << topIdx << " : " << top << " %" << endl;
 
     ///////////////////////////////////////////////////////////////////////////
     FILE *fConvOut;
@@ -361,11 +385,8 @@ int main() {
 
     FILE *foutput;
     foutput = fopen("out_final.txt", "w+");
-    for (int i = 0; i < output2dShape0[0]; i++) {
-        for (int j = 0; j < output2dShape0[1]; j++) {
-            fputs((to_string(output2d0[i][j]) + " ").c_str(), foutput);
-        }
-        fputs("\n", foutput);
+    for (int i = 0; i < finalOutputSize; i++) {
+        fputs((to_string(finalOutput[i]) + " ").c_str(), foutput);
     }
     fclose(foutput);
 
@@ -381,6 +402,7 @@ int main() {
     delete[] output2dShape0;
     delete2(output2d1, output2dShape1);
     delete[] output2dShape1;
+    delete[] finalOutput;
 
     return 0;
 }
