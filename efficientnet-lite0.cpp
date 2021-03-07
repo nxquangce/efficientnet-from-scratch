@@ -14,6 +14,8 @@ enum Command {
     DEPTHWISE_CON2D,
     ADD,
     AVERAGE_POOL2D,
+    FULLYCONNECTED,
+    SOFTMAX,
     RELU6,
     NONE,
     WEIGHT,
@@ -67,8 +69,10 @@ int main() {
     int *outputShape1;
     int ***mem;
     int *memShape;
-    int **output2d;
-    int *output2dShape;
+    int **output2d0;
+    int *output2dShape0;
+    int **output2d1;
+    int *output2dShape1;
 
     // First
     output1 = input;
@@ -195,10 +199,10 @@ int main() {
             cout << "  Input 1 shape: " << memShape[0] << "x" << memShape[1] << "x" << memShape[2] << endl;
 
             if (pingpong) {
-                outputShape0 = add(output0, mem, output1, memShape);
+                outputShape0 = matAdd(output0, mem, output1, memShape);
                 cout << "  Input 2 shape: " << outputShape1[0] << "x" << outputShape1[1] << "x" << outputShape1[2] << endl;
             } else {
-                outputShape1 = add(output1, mem, output0, memShape);
+                outputShape1 = matAdd(output1, mem, output0, memShape);
                 cout << "  Input 2 shape: " << outputShape0[0] << "x" << outputShape0[1] << "x" << outputShape0[2] << endl;
             }
 
@@ -253,15 +257,87 @@ int main() {
             cout << "----------------------------" << endl;
 
             if (pingpong) {
-                output2dShape = reshapey1xtxy(output2d, output1, outputShape1);
+                output2dShape0 = reshapey1xtxy(output2d0, output1, outputShape1);
                 cout << "  Input shape : " << outputShape1[0] << "x" << outputShape1[1] << "x" << outputShape1[2] << endl;
+                cout << "  Output shape: " << output2dShape0[0] << "x" << output2dShape0[1] << endl;
+
             } else {
-                output2dShape = reshapey1xtxy(output2d, output0, outputShape0);
+                output2dShape1 = reshapey1xtxy(output2d1, output0, outputShape0);
                 cout << "  Input shape : " << outputShape0[0] << "x" << outputShape0[1] << "x" << outputShape0[2] << endl;
+                cout << "  Output shape: " << output2dShape1[0] << "x" << output2dShape1[1] << endl;
             }
 
-            cout << "  Output shape: " << output2dShape[0] << "x" << output2dShape[1] << endl;
             cout << "============================" << endl;
+        }
+
+        if (layerCmd[0] == FULLYCONNECTED) {
+            fgets(line, 100, fp);
+            line[strcspn(line, "\n")] = 0;
+            parseLine(cmd, line);
+
+            int weightShape[2] = {cmd[1], cmd[2]};
+            int **weight;
+            createPointer2(weight, weightShape);
+            char lineRaw[4000];
+            int idxRow = 0, idxCol = 0;
+            for (int idx = 0; idx < weightShape[0]; idx += 1) {
+                fgets(lineRaw, 4000, fp);
+                lineRaw[strcspn(lineRaw, "\n")] = 0;
+                string line = string(lineRaw);
+
+                string delimiter = " ";
+                size_t pos = 0;
+
+                int paramCount = 0;
+
+                int value;
+                while (line != "") {
+                    pos = line.find(delimiter);
+                    const char *word = (pos != string::npos) ? line.substr(0, pos).c_str() : line.substr(0).c_str();
+                    if (pos == string::npos) pos = strlen(string(line).c_str()) - delimiter.length();
+                    line.erase(0, pos + delimiter.length()).c_str();
+
+                    value = charTOint(word);
+
+                    weight[idxRow][idxCol] = value;
+
+                    idxCol += 1;
+                    if (idxCol == weightShape[1]) {
+                        idxCol = 0;
+                        idxRow += 1;
+                    }
+                }
+            }
+
+            fgets(line, 100, fp);
+            line[strcspn(line, "\n")] = 0;
+            parseLine(cmd, line);
+            collect(fp, cmd, weights, biases);
+            int biasSize = cmd[1];
+
+            cout << "============================" << endl;
+            cout << "|      Fully connected     |" << endl;
+            cout << "----------------------------" << endl;
+
+            if (pingpong) {
+                cout << "  Input shape : " << output2dShape1[0] << "x" << output2dShape1[1] << endl;
+                cout << "  Filter shape : " << weightShape[0] << "x" << weightShape[1] << endl;
+                output2dShape0 = new int[2]{output2dShape1[0], weightShape[1]};
+                createPointer2(output2d0, output2dShape0);
+                matMul(output2d0, output2d1, output2dShape1, weight, weightShape, biases);
+                cout << "  Output shape : " << output2dShape0[0] << "x" << output2dShape0[1] << endl;
+            } else {
+                cout << "  Input shape : " << output2dShape0[0] << "x" << output2dShape0[1] << endl;
+                cout << "  Filter shape : " << weightShape[0] << "x" << weightShape[1] << endl;
+                output2dShape1 = new int[2]{output2dShape0[0], weightShape[1]};
+                createPointer2(output2d1, output2dShape1);
+                matMul(output2d1, output2d0, output2dShape0, weight, weightShape, biases);
+                cout << "  Output shape : " << output2dShape1[0] << "x" << output2dShape1[1] << endl;
+
+            }
+            cout << "============================" << endl;
+
+            delete2(weight, weightShape);
         }
 
         pingpong = !pingpong;
@@ -285,13 +361,13 @@ int main() {
 
     FILE *foutput;
     foutput = fopen("out_final.txt", "w+");
-    for (int i = 0; i < output2dShape[0]; i++) {
-        for (int j = 0; j < output2dShape[1]; j++) {
-            fputs((to_string(output2d[i][j]) + " ").c_str(), foutput);
+    for (int i = 0; i < output2dShape0[0]; i++) {
+        for (int j = 0; j < output2dShape0[1]; j++) {
+            fputs((to_string(output2d0[i][j]) + " ").c_str(), foutput);
         }
-        fputs("\n", fConvOut);
+        fputs("\n", foutput);
     }
-    fclose(fConvOut);
+    fclose(foutput);
 
     fclose(fp);
 
@@ -301,8 +377,10 @@ int main() {
     delete[] outputShape0;
     delete[] outputShape1;
     delete[] memShape;
-    delete2(output2d, output2dShape);
-    delete[] output2dShape;
+    delete2(output2d0, output2dShape0);
+    delete[] output2dShape0;
+    delete2(output2d1, output2dShape1);
+    delete[] output2dShape1;
 
     return 0;
 }
@@ -327,6 +405,10 @@ void parseLine(int *output, string line) {
             output[paramCount] = NONE;
         else if (strcmp(word, "averagepool2d") == 0)
             output[paramCount] = AVERAGE_POOL2D;
+        else if (strcmp(word, "fullyconnected") == 0)
+            output[paramCount] = FULLYCONNECTED;
+        else if (strcmp(word, "softmax") == 0)
+            output[paramCount] = SOFTMAX;
         else if (strcmp(word, "relu6") == 0)
             output[paramCount] = RELU6;
         else if (strcmp(word, "weight") == 0)

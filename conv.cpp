@@ -441,7 +441,7 @@ int *conv2d_depthwise(
     return outputShape;
 }
 
-int *add(int ***&output, int ***matrixA, int ***matrixB, int shape[3]) {
+int *matAdd(int ***&output, int ***matrixA, int ***matrixB, int shape[3]) {
     int *outputShape = new int[3]{shape[0], shape[1], shape[2]};
     createPointer3(output, outputShape);
 
