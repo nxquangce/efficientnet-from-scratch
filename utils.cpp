@@ -29,20 +29,20 @@ const char *popWord(string &line, string delimiter, size_t &pos) {
     return returnWord;
 }
 
-void print1(int *pointer, int size) {
+void print1(int8_t *pointer, int size) {
     for (int i = 0; i < size; i++) {
-        cout << pointer[i] << " ";
+        cout << (int)pointer[i] << " ";
     }
     cout << endl;
 }
 
-void print3(int ***pointer, int shape[3]) {
+void print3(int8_t ***pointer, int shape[3]) {
     for (int i = 0; i < shape[2]; i++) {
         for (int j = 0; j < shape[0]; j++) {
             cout << "   ";
             for (int k = 0; k < shape[1]; k++) {
                 if (pointer[i][j][k] < 10) cout << " ";
-                cout << pointer[i][j][k] << " ";
+                cout << (int)pointer[i][j][k] << " ";
             }
 
             cout << endl;
@@ -50,12 +50,12 @@ void print3(int ***pointer, int shape[3]) {
     }
 }
 
-void print4(int ****pointer, int shape[4]) {
+void print4(int8_t ****pointer, int shape[4]) {
     for (int f = 0; f < shape[0]; f++) {
         for (int c = 0; c < shape[3]; c++) {
             for (int i = 0; i < shape[1]; i++) {
                 for (int j = 0; j < shape[2]; j++) {
-                    cout << pointer[f][c][i][j] << " ";
+                    cout << (int)pointer[f][c][i][j] << " ";
                 }
                 cout << endl;
             }
@@ -67,10 +67,10 @@ void print4(int ****pointer, int shape[4]) {
 /**
  * Create a 2D array with pointer
  **/
-void createPointer2(int **&pointer, int size[2]) {
-    pointer = new int *[size[0]];
+void createPointer2(int8_t **&pointer, int size[2]) {
+    pointer = new int8_t *[size[0]];
     for (int i = 0; i < size[0]; i++)
-        pointer[i] = new int[size[1]];
+        pointer[i] = new int8_t[size[1]];
 
     return;
 }
@@ -78,12 +78,12 @@ void createPointer2(int **&pointer, int size[2]) {
 /**
  * Create a 3D array with pointer
  **/
-void createPointer3(int ***&pointer, int size[3]) {
-    pointer = new int **[size[2]];
+void createPointer3(int8_t ***&pointer, int size[3]) {
+    pointer = new int8_t **[size[2]];
     for (int i = 0; i < size[2]; i++) {
-        pointer[i] = new int *[size[0]];
+        pointer[i] = new int8_t *[size[0]];
         for (int j = 0; j < size[0]; j++) {
-            pointer[i][j] = new int[size[1]];
+            pointer[i][j] = new int8_t[size[1]];
         }
     }
 
@@ -93,14 +93,14 @@ void createPointer3(int ***&pointer, int size[3]) {
 /**
  * Create a 4D array with pointer
  **/
-void createPointer4(int ****&pointer, int size[4]) {
-    pointer = new int ***[size[0]];
+void createPointer4(int8_t ****&pointer, int size[4]) {
+    pointer = new int8_t ***[size[0]];
     for (int i = 0; i < size[0]; i++) {
-        pointer[i] = new int **[size[3]];
+        pointer[i] = new int8_t **[size[3]];
         for (int j = 0; j < size[3]; j++) {
-            pointer[i][j] = new int *[size[1]];
+            pointer[i][j] = new int8_t *[size[1]];
             for (int k = 0; k < size[1]; k++) {
-                pointer[i][j][k] = new int[size[2]];
+                pointer[i][j][k] = new int8_t[size[2]];
             }
         }
     }
@@ -108,7 +108,7 @@ void createPointer4(int ****&pointer, int size[4]) {
     return;
 }
 
-void delete2(int **pointer, int size[2]) {
+void delete2(int8_t **pointer, int size[2]) {
     for (int i = 0; i < size[0]; i++) {
         delete[] pointer[i];
     }
@@ -118,7 +118,7 @@ void delete2(int **pointer, int size[2]) {
     return;
 }
 
-void delete3(int ***&pointer, int size[3]) {
+void delete3(int8_t ***&pointer, int size[3]) {
     for (int i = 0; i < size[2]; i++) {
         for (int j = 0; j < size[0]; j++) {
             delete[] pointer[i][j];
@@ -130,7 +130,7 @@ void delete3(int ***&pointer, int size[3]) {
     return;
 }
 
-void delete4(int ****&pointer, int size[4]) {
+void delete4(int8_t ****&pointer, int size[4]) {
     for (int i = 0; i < size[0]; i++) {
         for (int j = 0; j < size[3]; j++) {
             for (int k = 0; k < size[1]; k++) {
@@ -154,12 +154,12 @@ void copy1(int *&output, int *input, int size) {
     return;
 }
 
-void copy3(int ***&output, int ***input, int shape[3]) {
-    output = new int **[shape[2]];
+void copy3(int8_t ***&output, int8_t ***input, int shape[3]) {
+    output = new int8_t **[shape[2]];
     for (int i = 0; i < shape[2]; i++) {
-        output[i] = new int *[shape[0]];
+        output[i] = new int8_t *[shape[0]];
         for (int j = 0; j < shape[0]; j++) {
-            output[i][j] = new int[shape[1]];
+            output[i][j] = new int8_t[shape[1]];
             for (int k = 0; k < shape[1]; k++) {
                 output[i][j][k] = input[i][j][k];
             }
@@ -169,7 +169,7 @@ void copy3(int ***&output, int ***input, int shape[3]) {
     return;
 }
 
-int *reshapey1xtxy(int **&output, int ***input, int inputShape[3]) {
+int *reshapey1xtxy(int8_t **&output, int8_t ***input, int inputShape[3]) {
     int *outputSize = new int[2]{inputShape[1], inputShape[2]};
     createPointer2(output, outputSize);
     for (int idxRow = 0; idxRow < outputSize[0]; idxRow += 1) {

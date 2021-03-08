@@ -1,0 +1,14 @@
+TARGET = run
+
+CXX = g++
+CXXFLAGS = -std=c++0x -Wall -g `pkg-config --cflags --libs opencv4` -lopencv_core -lopencv_highgui -lopencv_imgcodecs -lopencv_imgproc -lopencv_videoio
+OBJECTS = efficientnet-lite0.o conv.o activation.o utils.o
+
+all: $(TARGET)
+
+$(TARGET): $(OBJECTS)
+	$(CXX) $(CXXFLAGS) -o $(TARGET) $(OBJECTS)
+	rm -f $(OBJECTS)
+
+clean:
+	rm -f $(OBJECTS) $(TARGET) *~

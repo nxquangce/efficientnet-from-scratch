@@ -11,7 +11,7 @@ typedef int ts112x32[32][112][112];
 typedef int wts32x3[32][3][3][3];
 typedef int vt32[32];
 
-int *paddingSame(int ***&output, int ***input, int inputShape[3], int filterShape[4]) {
+int *paddingSame(int8_t ***&output, int8_t ***input, int inputShape[3], int filterShape[4]) {
     int numPad = (filterShape[1] - 1) / 2;
     if (numPad == 0) {
         output = input;
@@ -75,7 +75,7 @@ int *calFlattenFilterSize(int filterShape[4]) {
  * Create Toeplitz matrix from input tensor,
  * flatten weights tensors
  **/
-void createToeplitz(int **inputToeplitz, int **filterFlattened, int ***input, int inputShape[3], int ****filter, int filterShape[4], int stride) {
+void createToeplitz(int8_t **inputToeplitz, int8_t **filterFlattened, int8_t ***input, int inputShape[3], int8_t ****filter, int filterShape[4], int stride) {
     // for array
     // int iNumChannel = int(sqrt(sizeof(input) / sizeof(*input)));
     // int iSize = int(sqrt(sizeof(input[0]) / sizeof(*input[0])));
@@ -151,11 +151,11 @@ void createToeplitz(int **inputToeplitz, int **filterFlattened, int ***input, in
 }
 
 void matMul(
-    int **output, int **matrixA, int matrixASize[2], int **matrixB, int matrixBSize[2], int *biases, int (*actFn)(int) = [](int x) { return x; }) {
+    int8_t **output, int8_t **matrixA, int matrixASize[2], int8_t **matrixB, int matrixBSize[2], int8_t *biases, int8_t (*actFn)(int8_t) = [](int8_t x) { return x; }) {
     int outputHeight = matrixASize[0];
     int outputWidth = matrixBSize[1];
 
-    int *bias = (biases) ? biases : new int[outputHeight];
+    int8_t *bias = (biases) ? biases : new int8_t[outputHeight];
 
     // for (int idx = 0; idx < outputHeight; idx += 1) bias[idx] = 0;
 
@@ -174,7 +174,7 @@ void matMul(
     return;
 }
 
-void reshape(int ***output, int outputShape[3], int **matrix, int matrixSize[2]) {
+void reshape(int8_t ***output, int outputShape[3], int8_t **matrix, int matrixSize[2]) {
     int numChannel = outputShape[2];
     int outSize = outputShape[0];
 
@@ -199,19 +199,19 @@ void reshape(int ***output, int outputShape[3], int **matrix, int matrixSize[2])
 void conv2d_4x2x2() {  // int input[3][4][4], int weights[2][3][2][2], int stride = 1) {
     cout << "Test conv2d 3x4x4 * 2x2x2" << endl;
     int iToepSize[2] = {12, 9};
-    int **iToep;
+    int8_t **iToep;
     createPointer2(iToep, iToepSize);
 
     cout << " Created iToep" << endl;
 
     int fFattenSize[2] = {2, 12};
-    int **fFatten;
+    int8_t **fFatten;
     createPointer2(fFatten, fFattenSize);
 
     cout << " Created fFatten" << endl;
 
     int inputShape[3] = {4, 4, 3};
-    int ***input;
+    int8_t ***input;
     createPointer3(input, inputShape);
 
     cout << " Created input" << endl;
@@ -231,15 +231,15 @@ void conv2d_4x2x2() {  // int input[3][4][4], int weights[2][3][2][2], int strid
     }
 
     int weightsShape[4] = {2, 2, 2, 3};
-    int ****weights;
+    int8_t ****weights;
     createPointer4(weights, weightsShape);
 
     for (int i = 0; i < 2; i++) {
-        weights[i] = new int **[3];
+        weights[i] = new int8_t **[3];
         for (int j = 0; j < 4; j++) {
-            weights[i][j] = new int *[2];
+            weights[i][j] = new int8_t *[2];
             for (int k = 0; k < 2; k++) {
-                weights[i][j][k] = new int[2];
+                weights[i][j][k] = new int8_t[2];
                 for (int u = 0; u < 2; u++)
                     weights[i][j][k][u] = i * 12 + j * 4 + k * 2 + u + 1;
             }
@@ -264,7 +264,7 @@ void conv2d_4x2x2() {  // int input[3][4][4], int weights[2][3][2][2], int strid
         cout << endl;
     }
 
-    int ***iInput;
+    int8_t ***iInput;
     int *iInputShape = paddingSame(iInput, input, inputShape, weightsShape);
     cout << "  Padding input:" << endl;
     print3(iInput, iInputShape);
@@ -295,10 +295,10 @@ void conv2d_4x2x2() {  // int input[3][4][4], int weights[2][3][2][2], int strid
     }
 
     int multipliedMatrixSize[2] = {2, 9};
-    int **multipliedMatrix;
+    int8_t **multipliedMatrix;
     createPointer2(multipliedMatrix, multipliedMatrixSize);
 
-    matMul(multipliedMatrix, fFatten, fFattenSize, iToep, iToepSize, NULL, [](int x) { return x; });
+    matMul(multipliedMatrix, fFatten, fFattenSize, iToep, iToepSize, NULL, [](int8_t x) { return x; });
 
     cout << "  Multiplied Matrices" << endl;
 
@@ -311,7 +311,7 @@ void conv2d_4x2x2() {  // int input[3][4][4], int weights[2][3][2][2], int strid
     }
 
     int reshapedOutputSize[3] = {3, 3, 2};
-    int ***reshapedOutput;
+    int8_t ***reshapedOutput;
     createPointer3(reshapedOutput, reshapedOutputSize);
 
     reshape(reshapedOutput, reshapedOutputSize, multipliedMatrix, multipliedMatrixSize);
@@ -332,22 +332,22 @@ void conv2d_4x2x2() {  // int input[3][4][4], int weights[2][3][2][2], int strid
 }
 
 int *conv2d(
-    int ***&output, int ***input, int inputShape[3], int ****weights, int weightsShape[4], int *biases, int stride = 2, int (*actFn)(int) = [](int x) { return x; }) {
-    int ***iPadding;
+    int8_t ***&output, int8_t ***input, int inputShape[3], int8_t ****weights, int weightsShape[4], int8_t *biases, int stride = 2, int8_t (*actFn)(int8_t) = [](int8_t x) { return x; }) {
+    int8_t ***iPadding;
     int *iPaddingShape = paddingSame(iPadding, input, inputShape, weightsShape);
 
     int *iToepSize = calToeplitzSize(iPaddingShape, weightsShape, stride);
-    int **iToep;
+    int8_t **iToep;
     createPointer2(iToep, iToepSize);
 
     int *fFlattenSize = calFlattenFilterSize(weightsShape);
-    int **fFlatten;
+    int8_t **fFlatten;
     createPointer2(fFlatten, fFlattenSize);
 
     createToeplitz(iToep, fFlatten, iPadding, iPaddingShape, weights, weightsShape, stride);
 
     int toepOutputSize[2] = {weightsShape[0], iToepSize[1]};
-    int **toepOutput;
+    int8_t **toepOutput;
     createPointer2(toepOutput, toepOutputSize);
     matMul(toepOutput, fFlatten, fFlattenSize, iToep, iToepSize, biases, actFn);
 
@@ -376,14 +376,14 @@ int *conv2d(
 }
 
 int *conv2d_depthwise(
-    int ***&output, int ***input, int inputShape[3], int ****weights, int weightsShape[4], int *biases, int stride = 2, int (*actFn)(int) = [](int x) { return x; }) {
-    int ***iPadding;
+    int8_t ***&output, int8_t ***input, int inputShape[3], int8_t ****weights, int weightsShape[4], int8_t *biases, int stride = 2, int8_t (*actFn)(int8_t) = [](int8_t x) { return x; }) {
+    int8_t ***iPadding;
     int *iPaddingShape = paddingSame(iPadding, input, inputShape, weightsShape);
 
     int outputSize = ceil((iPaddingShape[0] - (weightsShape[1] - 1)) / (float)stride);
     int *outputShape = new int[3]{outputSize, outputSize, inputShape[2]};
     // createPointer3(output, outputShape);
-    output = new int **[outputShape[2]];
+    output = new int8_t **[outputShape[2]];
 
     cout << "============================" << endl;
     cout << "|     Depthwise Conv2d     |" << endl;
@@ -396,33 +396,33 @@ int *conv2d_depthwise(
 
     for (int idxChannel = 0; idxChannel < inputShape[2]; idxChannel += 1) {
         int localWeightShape[4] = {weightsShape[0], weightsShape[1], weightsShape[2], 1};
-        int ****localWeights = new int ***[localWeightShape[0]];
-        localWeights[0] = new int **[localWeightShape[2]];
+        int8_t ****localWeights = new int8_t ***[localWeightShape[0]];
+        localWeights[0] = new int8_t **[localWeightShape[2]];
         localWeights[0][0] = weights[0][idxChannel];
 
         int localIPaddingShape[3] = {iPaddingShape[0], iPaddingShape[1], 1};
-        int ***localIPadding = new int **[1];
+        int8_t ***localIPadding = new int8_t **[1];
         localIPadding[0] = iPadding[idxChannel];
 
         int *iToepSize = calToeplitzSize(localIPaddingShape, localWeightShape, stride);
-        int **iToep;
+        int8_t **iToep;
         createPointer2(iToep, iToepSize);
 
         int *fFlattenSize = calFlattenFilterSize(localWeightShape);
-        int **fFlatten;
+        int8_t **fFlatten;
         createPointer2(fFlatten, fFlattenSize);
 
         createToeplitz(iToep, fFlatten, localIPadding, localIPaddingShape, localWeights, localWeightShape, stride);
 
         int toepOutputSize[2] = {weightsShape[0], iToepSize[1]};
-        int **toepOutput;
+        int8_t **toepOutput;
         createPointer2(toepOutput, toepOutputSize);
         matMul(toepOutput, fFlatten, fFlattenSize, iToep, iToepSize, biases, actFn);
 
         // int outputSize = ceil((inputShape[0] - weightsShape[1]) / (float)stride + 1.0);
         int localOutputSize = ceil((iPaddingShape[0] - (weightsShape[1] - 1)) / (float)stride);
         int *localOutputShape = new int[3]{localOutputSize, localOutputSize, 1};
-        int ***localOutput;
+        int8_t ***localOutput;
         createPointer3(localOutput, localOutputShape);
         reshape(localOutput, localOutputShape, toepOutput, toepOutputSize);
 
@@ -441,7 +441,7 @@ int *conv2d_depthwise(
     return outputShape;
 }
 
-int *matAdd(int ***&output, int ***matrixA, int ***matrixB, int shape[3]) {
+int *matAdd(int8_t ***&output, int8_t ***matrixA, int8_t ***matrixB, int shape[3]) {
     int *outputShape = new int[3]{shape[0], shape[1], shape[2]};
     createPointer3(output, outputShape);
 

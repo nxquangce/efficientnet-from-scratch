@@ -2,12 +2,15 @@
 
 #include <cstring>
 #include <iostream>
+#include <opencv2/highgui.hpp>
+#include <opencv2/imgproc.hpp>
 
 #include "activation.h"
 #include "conv.h"
 #include "utils.h"
 
 using namespace std;
+using namespace cv;
 
 enum Command {
     CONV2D,
@@ -24,7 +27,7 @@ enum Command {
 };
 
 void parseLine(int *output, string line);
-int *collect(FILE *fp, int *cmd, int ****&weights, int *&biases);
+int *collect(FILE *fp, int *cmd, int8_t ****&weights, int8_t *&biases);
 
 int main() {
     cout << "Efficientnet-lite0 int8" << endl;
@@ -33,45 +36,42 @@ int main() {
     fp = fopen("weights.txt", "r");
     if (fp == NULL) perror("Error opening file");
 
-    // Input
-    // TODO: Repalce below code: Use opencv to read an image
+    Mat inImg = imread("input.jpg");
+
+    resize(inImg, inImg, Size(224, 224), 0, 0);
+    imshow("Resized", inImg);
 
     cout << " Created input" << endl;
     int inputShape[3] = {224, 224, 3};
-    int ***input;
+    int8_t ***input;
     createPointer3(input, inputShape);
 
-    for (int i = 0; i < inputShape[2]; i++) {
-        for (int j = 0; j < inputShape[0]; j++) {
-            // cout << "   ";
-            for (int k = 0; k < inputShape[1]; k++) {
-                input[i][j][k] = (i * 224 * 224 + j * 4 + k + 1) % 2;
-
-                // if (input[i][j][k] < 10) cout << " ";
-                // cout << input[i][j][k] << " ";
-            }
-
-            // cout << endl;
+    for (int i = 0; i < inImg.rows; i++) {
+        for (int j = 0; j < inImg.cols; j++) {
+            // 0.012566016986966133 * (q - 131)
+            input[0][i][j] = 0.012566016986966133 * (0.012566016986966133 * (inImg.at<Vec3b>(i, j)[0] - 131) - 3);  // BRG
+            input[1][i][j] = 0.012566016986966133 * (0.012566016986966133 * (inImg.at<Vec3b>(i, j)[1] - 131) - 3);  // BRG
+            input[2][i][j] = 0.012566016986966133 * (0.012566016986966133 * (inImg.at<Vec3b>(i, j)[2] - 131) - 3);  // BRG
         }
     }
 
     char line[100];
     int cmd[5] = {};
-    int ****weights;
-    int *biases;
+    int8_t ****weights;
+    int8_t *biases;
 
     bool pingpong = true;
     int layerCount = 1;
 
-    int ***output0;
+    int8_t ***output0;
     int *outputShape0;
-    int ***output1;
+    int8_t ***output1;
     int *outputShape1;
-    int ***mem;
+    int8_t ***mem;
     int *memShape;
-    int **output2d0;
+    int8_t **output2d0;
     int *output2dShape0;
-    int **output2d1;
+    int8_t **output2d1;
     int *output2dShape1;
     double *finalOutput;
     int finalOutputSize;
@@ -278,7 +278,7 @@ int main() {
             parseLine(cmd, line);
 
             int weightShape[2] = {cmd[1], cmd[2]};
-            int **weight;
+            int8_t **weight;
             createPointer2(weight, weightShape);
             char lineRaw[4000];
             int idxRow = 0, idxCol = 0;
@@ -350,7 +350,24 @@ int main() {
         cout << endl;
     }
 
-    int top = finalOutput[0];
+    FILE *fLabel;
+    fLabel = fopen("label.txt", "r");
+    if (fLabel == NULL) perror("Error opening file");
+
+    string *labels = new string[1000];
+    for (int idx = 0; idx < 1000; idx += 1) {
+        char lline[200];
+        fgets(lline, 200, fLabel);
+        lline[strcspn(lline, "\n")] = 0;
+        string sline = string(lline);
+        size_t start = sline.find(" ") + 2;
+        size_t end = sline.length() - start - 2;
+        labels[idx] = sline.substr(start, end);
+    }
+
+    fclose(fLabel);
+
+    double top = finalOutput[0];
     int topIdx = 0;
     for (int idx = 0; idx < finalOutputSize; idx += 1) {
         if (finalOutput[idx] > top) {
@@ -360,20 +377,60 @@ int main() {
     }
 
     cout << "Top: " << topIdx << " : " << top << " %" << endl;
+    cout << labels[topIdx] << endl;
+
+    for (int idx = 0; idx < 1000; idx += 1) {
+        if (finalOutput[idx] == top) {
+            cout << idx << " : " << labels[idx] << endl;
+        }
+    }
 
     ///////////////////////////////////////////////////////////////////////////
-    FILE *fConvOut;
-    fConvOut = fopen("out_conv1.txt", "w+");
+    FILE *fOut0;
+    fOut0 = fopen("out_0.txt", "w+");
     for (int i = 0; i < outputShape0[2]; i++) {
         for (int j = 0; j < outputShape0[0]; j++) {
             for (int k = 0; k < outputShape0[1]; k++) {
-                fputs((to_string(output0[i][j][k]) + " ").c_str(), fConvOut);
+                fputs((to_string((int)output0[i][j][k]) + " ").c_str(), fOut0);
             }
-            fputs("\n", fConvOut);
+            fputs("\n", fOut0);
         }
-        fputs("\n", fConvOut);
+        fputs("\n", fOut0);
     }
-    fclose(fConvOut);
+    fclose(fOut0);
+
+    FILE *fOut1;
+    fOut1 = fopen("out_1.txt", "w+");
+    for (int i = 0; i < outputShape1[2]; i++) {
+        for (int j = 0; j < outputShape1[0]; j++) {
+            for (int k = 0; k < outputShape1[1]; k++) {
+                fputs((to_string((int)output1[i][j][k]) + " ").c_str(), fOut1);
+            }
+            fputs("\n", fOut1);
+        }
+        fputs("\n", fOut1);
+    }
+    fclose(fOut1);
+
+    FILE *fOut2d0;
+    fOut2d0 = fopen("out_2d0.txt", "w+");
+    for (int i = 0; i < output2dShape0[0]; i++) {
+        for (int j = 0; j < output2dShape0[1]; j++) {
+            fputs((to_string((int)output2d0[i][j]) + " ").c_str(), fOut2d0);
+        }
+        fputs("\n", fOut2d0);
+    }
+    fclose(fOut2d0);
+
+    FILE *fOut2d1;
+    fOut2d1 = fopen("out_2d1.txt", "w+");
+    for (int i = 0; i < output2dShape1[0]; i++) {
+        for (int j = 0; j < output2dShape1[1]; j++) {
+            fputs((to_string((int)output2d1[i][j]) + " ").c_str(), fOut2d1);
+        }
+        fputs("\n", fOut2d1);
+    }
+    fclose(fOut2d1);
 
     FILE *foutput;
     foutput = fopen("out_final.txt", "w+");
@@ -438,7 +495,7 @@ void parseLine(int *output, string line) {
     }
 }
 
-int *collect(FILE *fp, int *cmd, int ****&weights, int *&biases) {
+int *collect(FILE *fp, int *cmd, int8_t ****&weights, int8_t *&biases) {
     if (cmd[0] == WEIGHT) {
         int numFilter = cmd[1];
         int size = cmd[2];
@@ -487,7 +544,7 @@ int *collect(FILE *fp, int *cmd, int ****&weights, int *&biases) {
     if (cmd[0] == BIAS) {
         int numBias = cmd[1];
 
-        biases = new int[numBias];
+        biases = new int8_t[numBias];
 
         char lineRaw[9000];
         fgets(lineRaw, 9000, fp);
