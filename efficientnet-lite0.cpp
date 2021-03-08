@@ -286,19 +286,11 @@ int main() {
                 fgets(lineRaw, 4000, fp);
                 lineRaw[strcspn(lineRaw, "\n")] = 0;
                 string line = string(lineRaw);
-
-                string delimiter = " ";
                 size_t pos = 0;
-
-                int paramCount = 0;
 
                 int value;
                 while (line != "") {
-                    pos = line.find(delimiter);
-                    const char *word = (pos != string::npos) ? line.substr(0, pos).c_str() : line.substr(0).c_str();
-                    if (pos == string::npos) pos = strlen(string(line).c_str()) - delimiter.length();
-                    line.erase(0, pos + delimiter.length()).c_str();
-
+                    const char *word = popWord(line, " ", pos);
                     value = charTOint(word);
 
                     weight[idxRow][idxCol] = value;
@@ -464,18 +456,11 @@ int *collect(FILE *fp, int *cmd, int ****&weights, int *&biases) {
             fgets(lineRaw, 100, fp);
             lineRaw[strcspn(lineRaw, "\n")] = 0;
             string line = string(lineRaw);
-
-            string delimiter = " ";
             size_t pos = 0;
-
-            int paramCount = 0;
 
             int value;
             while (line != "") {
-                pos = line.find(delimiter);
-                const char *word = (pos != string::npos) ? line.substr(0, pos).c_str() : line.substr(0).c_str();
-                if (pos == string::npos) pos = strlen(string(line).c_str()) - delimiter.length();
-                line.erase(0, pos + delimiter.length()).c_str();
+                const char *word = popWord(line, " ", pos);
 
                 value = charTOint(word);
 
@@ -494,6 +479,7 @@ int *collect(FILE *fp, int *cmd, int ****&weights, int *&biases) {
                     idxChannel = 0;
                     idxFilter += 1;
                 }
+                delete[] word;
             }
         }
     }
@@ -507,16 +493,11 @@ int *collect(FILE *fp, int *cmd, int ****&weights, int *&biases) {
         fgets(lineRaw, 9000, fp);
         lineRaw[strcspn(lineRaw, "\n")] = 0;
         string line = string(lineRaw);
-
-        string delimiter = " ";
         size_t pos = 0;
+
         int idx = 0;
         while (line != "") {
-            pos = line.find(delimiter);
-            const char *word = (pos != string::npos) ? line.substr(0, pos).c_str() : line.substr(0).c_str();
-            if (pos == string::npos) pos = strlen(string(line).c_str()) - delimiter.length();
-            line.erase(0, pos + delimiter.length()).c_str();
-
+            const char *word = popWord(line, " ", pos);
             biases[idx] = charTOint(word);
             idx += 1;
         }
