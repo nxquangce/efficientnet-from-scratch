@@ -50,7 +50,7 @@ npy_weights.txt
 sweights.txt
 
 *.npy
-l*
+weights/
 
 ### CMake ###
 CMakeLists.txt.user
