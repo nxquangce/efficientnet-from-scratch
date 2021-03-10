@@ -14,3 +14,5 @@ void delete4(int8_t ****&pointer, int size[4]);
 void copy1(int *&output, int *input, int size);
 void copy3(int8_t ***&output, int8_t ***input, int shape[3]);
 int *reshapey1xtxy(int8_t **&output, int8_t ***input, int inputShape[3]);
+void quantize3(int8_t ***input, int shape[3], double param1, double param2);
+void quantize2(int8_t **input, int shape[2], double param1, double param2);

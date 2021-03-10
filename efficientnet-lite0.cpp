@@ -26,7 +26,7 @@ enum Command {
     RESHAPE
 };
 
-void parseLine(int *output, string line);
+void parseLine(int *output, string line, double quantizeParams[2]);
 int *collect(FILE *fp, int *cmd, int8_t ****&weights, int8_t *&biases);
 
 int main() {
@@ -59,6 +59,7 @@ int main() {
     int cmd[5] = {};
     int8_t ****weights;
     int8_t *biases;
+    double *quantizeParams = new double[2];
 
     bool pingpong = true;
     int layerCount = 1;
@@ -84,7 +85,7 @@ int main() {
         cout << "# " << layerCount << endl;
         // fgets(line, 100, fp);
         line[strcspn(line, "\n")] = 0;
-        parseLine(cmd, line);
+        parseLine(cmd, line, quantizeParams);
 
         int layerCmd[5] = {cmd[0], cmd[1], cmd[2], cmd[3], cmd[4]};
         int stride = layerCmd[2];
@@ -92,7 +93,7 @@ int main() {
         if (layerCmd[0] == CONV2D) {
             fgets(line, 100, fp);
             line[strcspn(line, "\n")] = 0;
-            parseLine(cmd, line);
+            parseLine(cmd, line, quantizeParams);
             int numFilter = cmd[1];
             int size = cmd[2];
             int numChannel = cmd[4];
@@ -104,7 +105,7 @@ int main() {
             if (layerCmd[1] == 1) {
                 fgets(line, 100, fp);
                 line[strcspn(line, "\n")] = 0;
-                parseLine(cmd, line);
+                parseLine(cmd, line, quantizeParams);
                 collect(fp, cmd, weights, biases);
                 int biasSize = cmd[1];
                 // print1(biases, 32);
@@ -113,8 +114,10 @@ int main() {
             if (pingpong) {
                 if (layerCmd[3] == RELU6)
                     outputShape0 = conv2d(output0, output1, outputShape1, weights, weightsShape, biases, stride, relu6);
-                else
+                else {
                     outputShape0 = conv2d(output0, output1, outputShape1, weights, weightsShape, biases, stride);
+                    quantize3(output0, outputShape0, quantizeParams[0], quantizeParams[1]);
+                }
 
                 if (layerCmd[4] == 1) {
                     copy3(mem, output0, outputShape0);
@@ -125,8 +128,10 @@ int main() {
             } else {
                 if (layerCmd[3] == RELU6)
                     outputShape1 = conv2d(output1, output0, outputShape0, weights, weightsShape, biases, stride, relu6);
-                else
+                else {
                     outputShape1 = conv2d(output1, output0, outputShape0, weights, weightsShape, biases, stride);
+                    quantize3(output1, outputShape1, quantizeParams[0], quantizeParams[1]);
+                }
 
                 if (layerCmd[4] == 1) {
                     copy3(mem, output1, outputShape1);
@@ -144,7 +149,7 @@ int main() {
         if (layerCmd[0] == DEPTHWISE_CON2D) {
             fgets(line, 100, fp);
             line[strcspn(line, "\n")] = 0;
-            parseLine(cmd, line);
+            parseLine(cmd, line, quantizeParams);
             int numFilter = cmd[1];
             int size = cmd[2];
             int numChannel = cmd[4];
@@ -157,7 +162,7 @@ int main() {
             if (layerCmd[1] == 1) {
                 fgets(line, 100, fp);
                 line[strcspn(line, "\n")] = 0;
-                parseLine(cmd, line);
+                parseLine(cmd, line, quantizeParams);
                 collect(fp, cmd, weights, biases);
                 int biasSize = cmd[1];
                 // print1(biases, 32);
@@ -166,8 +171,10 @@ int main() {
             if (pingpong) {
                 if (layerCmd[3] == RELU6)
                     outputShape0 = conv2d_depthwise(output0, output1, outputShape1, weights, weightsShape, biases, stride, relu6);
-                else
+                else {
                     outputShape0 = conv2d_depthwise(output0, output1, outputShape1, weights, weightsShape, biases, stride);
+                    quantize3(output0, outputShape0, quantizeParams[0], quantizeParams[1]);
+                }
 
                 if (layerCmd[4] == 1) {
                     copy3(mem, output0, outputShape0);
@@ -180,6 +187,7 @@ int main() {
                     outputShape1 = conv2d_depthwise(output1, output0, outputShape0, weights, weightsShape, biases, stride, relu6);
                 } else {
                     outputShape1 = conv2d_depthwise(output1, output0, outputShape0, weights, weightsShape, biases, stride);
+                    quantize3(output1, outputShape1, quantizeParams[0], quantizeParams[1]);
                 }
 
                 if (layerCmd[4] == 1) {
@@ -275,7 +283,7 @@ int main() {
         if (layerCmd[0] == FULLYCONNECTED) {
             fgets(line, 100, fp);
             line[strcspn(line, "\n")] = 0;
-            parseLine(cmd, line);
+            parseLine(cmd, line, quantizeParams);
 
             int weightShape[2] = {cmd[1], cmd[2]};
             int8_t **weight;
@@ -305,7 +313,7 @@ int main() {
 
             fgets(line, 100, fp);
             line[strcspn(line, "\n")] = 0;
-            parseLine(cmd, line);
+            parseLine(cmd, line, quantizeParams);
             collect(fp, cmd, weights, biases);
             int biasSize = cmd[1];
 
@@ -320,6 +328,8 @@ int main() {
                 createPointer2(output2d0, output2dShape0);
                 matMul(output2d0, output2d1, output2dShape1, weight, weightShape, biases);
                 cout << "  Output shape : " << output2dShape0[0] << "x" << output2dShape0[1] << endl;
+
+                quantize2(output2d0, output2dShape0, 0.09174981713294983, -62);
             } else {
                 cout << "  Input shape : " << output2dShape0[0] << "x" << output2dShape0[1] << endl;
                 cout << "  Filter shape : " << weightShape[0] << "x" << weightShape[1] << endl;
@@ -327,6 +337,8 @@ int main() {
                 createPointer2(output2d1, output2dShape1);
                 matMul(output2d1, output2d0, output2dShape0, weight, weightShape, biases);
                 cout << "  Output shape : " << output2dShape1[0] << "x" << output2dShape1[1] << endl;
+
+                quantize2(output2d1, output2dShape1, 0.09174981713294983, -62);
             }
 
             if (layerCmd[1] == SOFTMAX) {
@@ -345,6 +357,8 @@ int main() {
             delete2(weight, weightShape);
         }
 
+        quantizeParams[0] = 1;
+        quantizeParams[1] = 0;
         pingpong = !pingpong;
         layerCount++;
         cout << endl;
@@ -376,7 +390,7 @@ int main() {
         }
     }
 
-    cout << "Top: " << topIdx << " : " << top << " %" << endl;
+    cout << "Top: " << topIdx << " : " << top * 100 << " %" << endl;
     cout << labels[topIdx] << endl;
 
     for (int idx = 0; idx < 1000; idx += 1) {
@@ -456,7 +470,7 @@ int main() {
     return 0;
 }
 
-void parseLine(int *output, string line) {
+void parseLine(int *output, string line, double *quantizeParams) {
     cout << "> " << line << endl;
 
     string delimiter = " ";
@@ -488,8 +502,12 @@ void parseLine(int *output, string line) {
             output[paramCount] = BIAS;
         else if (strcmp(word, "reshape") == 0)
             output[paramCount] = RESHAPE;
-        else
+        else if (paramCount > 4) {
+            quantizeParams[paramCount - 5] = atof(word);
+            cout << word << " --> " << quantizeParams[paramCount - 5] << endl;
+        } else
             output[paramCount] = charTOint(word);
+
         paramCount += 1;
         delete[] word;
     }

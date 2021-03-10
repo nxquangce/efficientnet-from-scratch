@@ -30,7 +30,7 @@ double *softmax(int8_t *input, int size) {
     }
 
     for (int idx = 0; idx < size; idx += 1) {
-        output[idx] = expInput[idx] / expSum;
+        output[idx] = (0.00390625 * (expInput[idx] / expSum - -128));
         // cout << idx << ": " << expInput[idx] << " / " << expSum << " = " << output[idx] << endl;
     }
 
@@ -54,7 +54,7 @@ int *pool2dAverage(int8_t ***&output, int8_t ***input, int inputShape[3], int fi
                         output[idxChannel][idxRow][idxCol] += input[idxChannel][idxFRow + idxRow * stride][idxFCol + idxCol * stride];
                     }
                 }
-                output[idxChannel][idxRow][idxCol] /= (filterShape[0] * filterShape[1]);
+                output[idxChannel][idxRow][idxCol] = 0.0235294122248888 * (output[idxChannel][idxRow][idxCol] / (filterShape[0] * filterShape[1]) - -128);
             }
         }
     }

@@ -20,13 +20,18 @@ int charTOint(const char *c) {
 
 const char *popWord(string &line, string delimiter, size_t &pos) {
     pos = line.find(delimiter);
-    const char *word = (pos == string::npos) ? line.substr(0, line.length()).c_str() : line.substr(0, pos).c_str();
-    char *returnWord = new char[strlen(word)];
-    strcpy(returnWord, word);
+    char *word;
+    if (pos == string::npos) {
+        word = new char[line.length()];
+        strcpy(word, line.substr(0, line.length()).c_str());
+    } else {
+        word = new char[pos];
+        strcpy(word, line.substr(0, pos).c_str());
+    }
     size_t posDel = (pos == string::npos) ? line.length() : pos;
     line.erase(0, posDel + delimiter.length());
 
-    return returnWord;
+    return word;
 }
 
 void print1(int8_t *pointer, int size) {
@@ -179,4 +184,22 @@ int *reshapey1xtxy(int8_t **&output, int8_t ***input, int inputShape[3]) {
     }
 
     return outputSize;
+}
+
+void quantize3(int8_t ***input, int shape[3], double param1, double param2) {
+    for (int idxChannel = 0; idxChannel < shape[2]; idxChannel += 1) {
+        for (int idxRow = 0; idxRow < shape[0]; idxRow += 1) {
+            for (int idxCol = 0; idxCol < shape[1]; idxCol += 1) {
+                input[idxChannel][idxRow][idxCol] = param1 * (input[idxChannel][idxRow][idxCol] - param2);
+            }
+        }
+    }
+}
+
+void quantize2(int8_t **input, int shape[2], double param1, double param2) {
+        for (int idxRow = 0; idxRow < shape[0]; idxRow += 1) {
+            for (int idxCol = 0; idxCol < shape[1]; idxCol += 1) {
+                input[idxRow][idxCol] = param1 * (input[idxRow][idxCol] - param2);
+            }
+        }
 }
