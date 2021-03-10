@@ -1,5 +1,6 @@
 #include <stdio.h>
 
+#include <chrono>
 #include <cstring>
 #include <iostream>
 #include <opencv2/highgui.hpp>
@@ -81,6 +82,7 @@ int main() {
     output1 = input;
     outputShape1 = inputShape;
 
+    auto start = chrono::high_resolution_clock::now();
     while (fgets(line, 100, fp)) {
         cout << "# " << layerCount << endl;
         // fgets(line, 100, fp);
@@ -210,9 +212,11 @@ int main() {
 
             if (pingpong) {
                 outputShape0 = matAdd(output0, mem, output1, memShape);
+                quantize3(output0, outputShape0, quantizeParams[0], quantizeParams[1]);
                 cout << "  Input 2 shape: " << outputShape1[0] << "x" << outputShape1[1] << "x" << outputShape1[2] << endl;
             } else {
                 outputShape1 = matAdd(output1, mem, output0, memShape);
+                quantize3(output1, outputShape1, quantizeParams[0], quantizeParams[1]);
                 cout << "  Input 2 shape: " << outputShape0[0] << "x" << outputShape0[1] << "x" << outputShape0[2] << endl;
             }
 
@@ -363,6 +367,11 @@ int main() {
         layerCount++;
         cout << endl;
     }
+    auto stop = chrono::high_resolution_clock::now();
+
+    auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
+
+    cout << "Execution time: " << duration.count() << " microseconds ~ " << (double)(duration.count()/1000.0) << "ms" << endl;
 
     FILE *fLabel;
     fLabel = fopen("label.txt", "r");
