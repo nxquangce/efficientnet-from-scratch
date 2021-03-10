@@ -94,12 +94,12 @@ void createToeplitz(int8_t **inputToeplitz, int8_t **filterFlattened, int8_t ***
     // SAME padding
     int oSize = ceil((iSize - ((fSize - 1))) / (float)stride);
 
-    // cout << "-----------------------" << endl;
-    // cout << "  Input shape : " << iSize << "x" << iSize << "x" << iNumChannel << endl;
-    // cout << "  Filter shape: " << numFilter << "x" << fSize << "x" << fSize << "x" << filterShape[3] << endl;
-    // cout << "    stride    : " << stride << endl;
-    // cout << "  Output shape: " << oSize << "x" << oSize << "x" << numFilter << endl;
-    // cout << "-----------------------" << endl;
+    // // cout << "-----------------------" << endl;
+    // // cout << "  Input shape : " << iSize << "x" << iSize << "x" << iNumChannel << endl;
+    // // cout << "  Filter shape: " << numFilter << "x" << fSize << "x" << fSize << "x" << filterShape[3] << endl;
+    // // cout << "    stride    : " << stride << endl;
+    // // cout << "  Output shape: " << oSize << "x" << oSize << "x" << numFilter << endl;
+    // // cout << "-----------------------" << endl;
 
     // Toeplitz output matrix
     int inputToeplitzWidth = oSize * oSize;
@@ -197,36 +197,36 @@ void reshape(int8_t ***output, int outputShape[3], int8_t **matrix, int matrixSi
 }
 
 void conv2d_4x2x2() {  // int input[3][4][4], int weights[2][3][2][2], int stride = 1) {
-    cout << "Test conv2d 3x4x4 * 2x2x2" << endl;
+    // cout << "Test conv2d 3x4x4 * 2x2x2" << endl;
     int iToepSize[2] = {12, 9};
     int8_t **iToep;
     createPointer2(iToep, iToepSize);
 
-    cout << " Created iToep" << endl;
+    // cout << " Created iToep" << endl;
 
     int fFattenSize[2] = {2, 12};
     int8_t **fFatten;
     createPointer2(fFatten, fFattenSize);
 
-    cout << " Created fFatten" << endl;
+    // cout << " Created fFatten" << endl;
 
     int inputShape[3] = {4, 4, 3};
     int8_t ***input;
     createPointer3(input, inputShape);
 
-    cout << " Created input" << endl;
-    cout << "  Input:" << endl;
+    // cout << " Created input" << endl;
+    // cout << "  Input:" << endl;
     for (int i = 0; i < 3; i++) {
         for (int j = 0; j < 4; j++) {
-            cout << "   ";
+            // cout << "   ";
             for (int k = 0; k < 4; k++) {
                 input[i][j][k] = i * 16 + j * 4 + k + 1;
 
-                if (input[i][j][k] < 10) cout << " ";
-                cout << input[i][j][k] << " ";
+                // if (input[i][j][k] < 10) cout << " ";
+                // cout << input[i][j][k] << " ";
             }
 
-            cout << endl;
+            // cout << endl;
         }
     }
 
@@ -246,52 +246,52 @@ void conv2d_4x2x2() {  // int input[3][4][4], int weights[2][3][2][2], int strid
         }
     }
 
-    cout << " Created weights" << endl;
-    cout << "  Weights:" << endl;
+    // cout << " Created weights" << endl;
+    // cout << "  Weights:" << endl;
 
     for (int i = 0; i < 2; i++) {
         for (int c = 0; c < 3; c++) {
             for (int y = 0; y < 2; y++) {
-                cout << "   ";
+                // cout << "   ";
                 for (int x = 0; x < 2; x++) {
-                    if (weights[i][c][y][x] < 10) cout << " ";
-                    cout << weights[i][c][y][x] << " ";
+                    // if (weights[i][c][y][x] < 10) cout << " ";
+                    // cout << weights[i][c][y][x] << " ";
                 }
 
-                cout << endl;
+                // cout << endl;
             }
         }
-        cout << endl;
+        // cout << endl;
     }
 
     int8_t ***iInput;
     int *iInputShape = paddingSame(iInput, input, inputShape, weightsShape);
-    cout << "  Padding input:" << endl;
+    // cout << "  Padding input:" << endl;
     print3(iInput, iInputShape);
 
     createToeplitz(iToep, fFatten, iInput, iInputShape, weights, weightsShape, 1);
 
-    cout << " Calculated Toeplitz" << endl;
-    cout << "  Toeplitz:" << endl;
+    // cout << " Calculated Toeplitz" << endl;
+    // cout << "  Toeplitz:" << endl;
 
     for (int i = 0; i < 12; i++) {
-        cout << "   ";
+        // cout << "   ";
         for (int j = 0; j < 9; j++) {
-            if (iToep[i][j] < 10) cout << " ";
-            cout << iToep[i][j] << " ";
+            // if (iToep[i][j] < 10) cout << " ";
+            // cout << iToep[i][j] << " ";
         }
-        cout << endl;
+        // cout << endl;
     }
 
-    cout << "  Flattened Filter:" << endl;
+    // cout << "  Flattened Filter:" << endl;
 
     for (int i = 0; i < 2; i++) {
-        cout << "   ";
+        // cout << "   ";
         for (int j = 0; j < 12; j++) {
-            if (fFatten[i][j] < 10) cout << " ";
-            cout << fFatten[i][j] << " ";
+            // if (fFatten[i][j] < 10) cout << " ";
+            // cout << fFatten[i][j] << " ";
         }
-        cout << endl;
+        // cout << endl;
     }
 
     int multipliedMatrixSize[2] = {2, 9};
@@ -300,14 +300,14 @@ void conv2d_4x2x2() {  // int input[3][4][4], int weights[2][3][2][2], int strid
 
     matMul(multipliedMatrix, fFatten, fFattenSize, iToep, iToepSize, NULL, [](int8_t x) { return x; });
 
-    cout << "  Multiplied Matrices" << endl;
+    // cout << "  Multiplied Matrices" << endl;
 
     for (int i = 0; i < 2; i++) {
-        cout << "   ";
+        // cout << "   ";
         for (int j = 0; j < 9; j++) {
-            cout << multipliedMatrix[i][j] << " ";
+            // cout << multipliedMatrix[i][j] << " ";
         }
-        cout << endl;
+        // cout << endl;
     }
 
     int reshapedOutputSize[3] = {3, 3, 2};
@@ -316,16 +316,16 @@ void conv2d_4x2x2() {  // int input[3][4][4], int weights[2][3][2][2], int strid
 
     reshape(reshapedOutput, reshapedOutputSize, multipliedMatrix, multipliedMatrixSize);
 
-    cout << "  Reshaped output" << endl;
+    // cout << "  Reshaped output" << endl;
     for (int c = 0; c < 2; c += 1) {
         for (int i = 0; i < 3; i += 1) {
-            cout << "   ";
+            // cout << "   ";
             for (int j = 0; j < 3; j += 1) {
-                cout << reshapedOutput[c][i][j] << " ";
+                // cout << reshapedOutput[c][i][j] << " ";
             }
-            cout << endl;
+            // cout << endl;
         }
-        cout << endl;
+        // cout << endl;
     }
 
     return;
@@ -357,14 +357,14 @@ int *conv2d(
     createPointer3(output, outputShape);
     reshape(output, outputShape, toepOutput, toepOutputSize);
 
-    cout << "============================" << endl;
-    cout << "|          Conv2d          |" << endl;
-    cout << "----------------------------" << endl;
-    cout << "  Input shape : " << iPaddingShape[0] << "x" << iPaddingShape[1] << "x" << iPaddingShape[2] << endl;
-    cout << "  Filter shape: " << weightsShape[0] << "x" << weightsShape[1] << "x" << weightsShape[2] << "x" << weightsShape[3] << endl;
-    cout << "    stride    : " << stride << endl;
-    cout << "  Output shape: " << outputShape[0] << "x" << outputShape[1] << "x" << outputShape[2] << endl;
-    cout << "----------------------------" << endl;
+    // cout << "============================" << endl;
+    // cout << "|          Conv2d          |" << endl;
+    // cout << "----------------------------" << endl;
+    // cout << "  Input shape : " << iPaddingShape[0] << "x" << iPaddingShape[1] << "x" << iPaddingShape[2] << endl;
+    // cout << "  Filter shape: " << weightsShape[0] << "x" << weightsShape[1] << "x" << weightsShape[2] << "x" << weightsShape[3] << endl;
+    // cout << "    stride    : " << stride << endl;
+    // cout << "  Output shape: " << outputShape[0] << "x" << outputShape[1] << "x" << outputShape[2] << endl;
+    // cout << "----------------------------" << endl;
 
     delete2(iToep, iToepSize);
     delete2(fFlatten, fFlattenSize);
@@ -385,14 +385,14 @@ int *conv2d_depthwise(
     // createPointer3(output, outputShape);
     output = new int8_t **[outputShape[2]];
 
-    cout << "============================" << endl;
-    cout << "|     Depthwise Conv2d     |" << endl;
-    cout << "----------------------------" << endl;
-    cout << "  Input shape : " << iPaddingShape[0] << "x" << iPaddingShape[1] << "x" << iPaddingShape[2] << endl;
-    cout << "  Filter shape: " << weightsShape[0] << "x" << weightsShape[1] << "x" << weightsShape[2] << "x" << weightsShape[3] << endl;
-    cout << "    stride    : " << stride << endl;
-    cout << "  Output shape: " << outputShape[0] << "x" << outputShape[1] << "x" << outputShape[2] << endl;
-    cout << "----------------------------" << endl;
+    // cout << "============================" << endl;
+    // cout << "|     Depthwise Conv2d     |" << endl;
+    // cout << "----------------------------" << endl;
+    // cout << "  Input shape : " << iPaddingShape[0] << "x" << iPaddingShape[1] << "x" << iPaddingShape[2] << endl;
+    // cout << "  Filter shape: " << weightsShape[0] << "x" << weightsShape[1] << "x" << weightsShape[2] << "x" << weightsShape[3] << endl;
+    // cout << "    stride    : " << stride << endl;
+    // cout << "  Output shape: " << outputShape[0] << "x" << outputShape[1] << "x" << outputShape[2] << endl;
+    // cout << "----------------------------" << endl;
 
     for (int idxChannel = 0; idxChannel < inputShape[2]; idxChannel += 1) {
         int localWeightShape[4] = {weightsShape[0], weightsShape[1], weightsShape[2], 1};

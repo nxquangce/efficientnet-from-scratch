@@ -42,7 +42,7 @@ int main() {
     resize(inImg, inImg, Size(224, 224), 0, 0);
     imshow("Resized", inImg);
 
-    cout << " Created input" << endl;
+    // cout << " Created input" << endl;
     int inputShape[3] = {224, 224, 3};
     int8_t ***input;
     createPointer3(input, inputShape);
@@ -84,7 +84,7 @@ int main() {
 
     auto start = chrono::high_resolution_clock::now();
     while (fgets(line, 100, fp)) {
-        cout << "# " << layerCount << endl;
+        // cout << "# " << layerCount << endl;
         // fgets(line, 100, fp);
         line[strcspn(line, "\n")] = 0;
         parseLine(cmd, line, quantizeParams);
@@ -205,22 +205,22 @@ int main() {
         }
 
         if (layerCmd[0] == ADD) {
-            cout << "============================" << endl;
-            cout << "|            Add           |" << endl;
-            cout << "----------------------------" << endl;
-            cout << "  Input 1 shape: " << memShape[0] << "x" << memShape[1] << "x" << memShape[2] << endl;
+            // // cout << "============================" << endl;
+            // // cout << "|            Add           |" << endl;
+            // // cout << "----------------------------" << endl;
+            // // cout << "  Input 1 shape: " << memShape[0] << "x" << memShape[1] << "x" << memShape[2] << endl;
 
             if (pingpong) {
                 outputShape0 = matAdd(output0, mem, output1, memShape);
                 quantize3(output0, outputShape0, quantizeParams[0], quantizeParams[1]);
-                cout << "  Input 2 shape: " << outputShape1[0] << "x" << outputShape1[1] << "x" << outputShape1[2] << endl;
+                // // cout << "  Input 2 shape: " << outputShape1[0] << "x" << outputShape1[1] << "x" << outputShape1[2] << endl;
             } else {
                 outputShape1 = matAdd(output1, mem, output0, memShape);
                 quantize3(output1, outputShape1, quantizeParams[0], quantizeParams[1]);
-                cout << "  Input 2 shape: " << outputShape0[0] << "x" << outputShape0[1] << "x" << outputShape0[2] << endl;
+                // // cout << "  Input 2 shape: " << outputShape0[0] << "x" << outputShape0[1] << "x" << outputShape0[2] << endl;
             }
 
-            cout << "============================" << endl;
+            // // cout << "============================" << endl;
 
             delete3(mem, memShape);
             delete[] memShape;
@@ -239,49 +239,49 @@ int main() {
         }
 
         if (layerCmd[3] == RELU6) {
-            cout << "|           ReLU6          |" << endl;
-            cout << "============================" << endl;
+            // cout << "|           ReLU6          |" << endl;
+            // cout << "============================" << endl;
         }
 
         if (layerCmd[0] == AVERAGE_POOL2D) {
-            cout << "============================" << endl;
-            cout << "|      Average Pool2D      |" << endl;
-            cout << "----------------------------" << endl;
+            // cout << "============================" << endl;
+            // cout << "|      Average Pool2D      |" << endl;
+            // cout << "----------------------------" << endl;
 
             int filterShape[2] = {layerCmd[1], layerCmd[2]};
 
             if (pingpong) {
                 outputShape0 = pool2dAverage(output0, output1, outputShape1, filterShape, layerCmd[3]);
-                cout << "  Input shape : " << outputShape1[0] << "x" << outputShape1[1] << "x" << outputShape1[2] << endl;
-                cout << "  Filter shape: " << filterShape[0] << "x" << filterShape[1] << endl;
-                cout << "  Output shape: " << outputShape0[0] << "x" << outputShape0[1] << "x" << outputShape0[2] << endl;
+                // cout << "  Input shape : " << outputShape1[0] << "x" << outputShape1[1] << "x" << outputShape1[2] << endl;
+                // cout << "  Filter shape: " << filterShape[0] << "x" << filterShape[1] << endl;
+                // cout << "  Output shape: " << outputShape0[0] << "x" << outputShape0[1] << "x" << outputShape0[2] << endl;
             } else {
                 outputShape1 = pool2dAverage(output1, output0, outputShape0, filterShape, layerCmd[3]);
-                cout << "  Input shape : " << outputShape0[0] << "x" << outputShape0[1] << "x" << outputShape0[2] << endl;
-                cout << "  Filter shape: " << filterShape[0] << "x" << filterShape[1] << endl;
-                cout << "  Output shape: " << outputShape1[0] << "x" << outputShape1[1] << "x" << outputShape1[2] << endl;
+                // cout << "  Input shape : " << outputShape0[0] << "x" << outputShape0[1] << "x" << outputShape0[2] << endl;
+                // cout << "  Filter shape: " << filterShape[0] << "x" << filterShape[1] << endl;
+                // cout << "  Output shape: " << outputShape1[0] << "x" << outputShape1[1] << "x" << outputShape1[2] << endl;
             }
 
-            cout << "============================" << endl;
+            // cout << "============================" << endl;
         }
 
         if (layerCmd[0] == RESHAPE) {
-            cout << "============================" << endl;
-            cout << "|          Reshape         |" << endl;
-            cout << "----------------------------" << endl;
+            // cout << "============================" << endl;
+            // cout << "|          Reshape         |" << endl;
+            // cout << "----------------------------" << endl;
 
             if (pingpong) {
                 output2dShape0 = reshapey1xtxy(output2d0, output1, outputShape1);
-                cout << "  Input shape : " << outputShape1[0] << "x" << outputShape1[1] << "x" << outputShape1[2] << endl;
-                cout << "  Output shape: " << output2dShape0[0] << "x" << output2dShape0[1] << endl;
+                // cout << "  Input shape : " << outputShape1[0] << "x" << outputShape1[1] << "x" << outputShape1[2] << endl;
+                // cout << "  Output shape: " << output2dShape0[0] << "x" << output2dShape0[1] << endl;
 
             } else {
                 output2dShape1 = reshapey1xtxy(output2d1, output0, outputShape0);
-                cout << "  Input shape : " << outputShape0[0] << "x" << outputShape0[1] << "x" << outputShape0[2] << endl;
-                cout << "  Output shape: " << output2dShape1[0] << "x" << output2dShape1[1] << endl;
+                // cout << "  Input shape : " << outputShape0[0] << "x" << outputShape0[1] << "x" << outputShape0[2] << endl;
+                // cout << "  Output shape: " << output2dShape1[0] << "x" << output2dShape1[1] << endl;
             }
 
-            cout << "============================" << endl;
+            // cout << "============================" << endl;
         }
 
         if (layerCmd[0] == FULLYCONNECTED) {
@@ -321,34 +321,34 @@ int main() {
             collect(fp, cmd, weights, biases);
             int biasSize = cmd[1];
 
-            cout << "============================" << endl;
-            cout << "|      Fully connected     |" << endl;
-            cout << "----------------------------" << endl;
+            // cout << "============================" << endl;
+            // cout << "|      Fully connected     |" << endl;
+            // cout << "----------------------------" << endl;
 
             if (pingpong) {
-                cout << "  Input shape : " << output2dShape1[0] << "x" << output2dShape1[1] << endl;
-                cout << "  Filter shape : " << weightShape[0] << "x" << weightShape[1] << endl;
+                // cout << "  Input shape : " << output2dShape1[0] << "x" << output2dShape1[1] << endl;
+                // cout << "  Filter shape : " << weightShape[0] << "x" << weightShape[1] << endl;
                 output2dShape0 = new int[2]{output2dShape1[0], weightShape[1]};
                 createPointer2(output2d0, output2dShape0);
                 matMul(output2d0, output2d1, output2dShape1, weight, weightShape, biases);
-                cout << "  Output shape : " << output2dShape0[0] << "x" << output2dShape0[1] << endl;
+                // cout << "  Output shape : " << output2dShape0[0] << "x" << output2dShape0[1] << endl;
 
                 quantize2(output2d0, output2dShape0, 0.09174981713294983, -62);
             } else {
-                cout << "  Input shape : " << output2dShape0[0] << "x" << output2dShape0[1] << endl;
-                cout << "  Filter shape : " << weightShape[0] << "x" << weightShape[1] << endl;
+                // cout << "  Input shape : " << output2dShape0[0] << "x" << output2dShape0[1] << endl;
+                // cout << "  Filter shape : " << weightShape[0] << "x" << weightShape[1] << endl;
                 output2dShape1 = new int[2]{output2dShape0[0], weightShape[1]};
                 createPointer2(output2d1, output2dShape1);
                 matMul(output2d1, output2d0, output2dShape0, weight, weightShape, biases);
-                cout << "  Output shape : " << output2dShape1[0] << "x" << output2dShape1[1] << endl;
+                // cout << "  Output shape : " << output2dShape1[0] << "x" << output2dShape1[1] << endl;
 
                 quantize2(output2d1, output2dShape1, 0.09174981713294983, -62);
             }
 
             if (layerCmd[1] == SOFTMAX) {
-                cout << "----------------------------" << endl;
-                cout << "|          Softmax         |" << endl;
-                cout << "============================" << endl;
+                // cout << "----------------------------" << endl;
+                // cout << "|          Softmax         |" << endl;
+                // cout << "============================" << endl;
                 if (pingpong) {
                     finalOutputSize = output2dShape0[1];
                     finalOutput = softmax(output2d0[0], finalOutputSize);
@@ -365,7 +365,7 @@ int main() {
         quantizeParams[1] = 0;
         pingpong = !pingpong;
         layerCount++;
-        cout << endl;
+        // cout << endl;
     }
     auto stop = chrono::high_resolution_clock::now();
 
@@ -478,7 +478,7 @@ int main() {
 }
 
 void parseLine(int *output, string line, double *quantizeParams) {
-    cout << "> " << line << endl;
+    // cout << "> " << line << endl;
 
     string delimiter = " ";
     size_t pos = 0;
@@ -511,7 +511,7 @@ void parseLine(int *output, string line, double *quantizeParams) {
             output[paramCount] = RESHAPE;
         else if (paramCount > 4) {
             quantizeParams[paramCount - 5] = atof(word);
-            cout << word << " --> " << quantizeParams[paramCount - 5] << endl;
+            // cout << word << " --> " << quantizeParams[paramCount - 5] << endl;
         } else
             output[paramCount] = charTOint(word);
 
