@@ -22,10 +22,10 @@ const char *popWord(string &line, string delimiter, size_t &pos) {
     pos = line.find(delimiter);
     char *word;
     if (pos == string::npos) {
-        word = new char[line.length()];
+        word = new char[line.length() + 1];
         strcpy(word, line.substr(0, line.length()).c_str());
     } else {
-        word = new char[pos];
+        word = new char[pos + 1];
         strcpy(word, line.substr(0, pos).c_str());
     }
     size_t posDel = (pos == string::npos) ? line.length() : pos;

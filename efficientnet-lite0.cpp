@@ -466,10 +466,8 @@ int main() {
 
     delete3(output0, outputShape0);
     delete3(output1, outputShape1);
-    delete3(mem, memShape);
     delete[] outputShape0;
     delete[] outputShape1;
-    delete[] memShape;
     delete2(output2d0, output2dShape0);
     delete[] output2dShape0;
     delete2(output2d1, output2dShape1);
