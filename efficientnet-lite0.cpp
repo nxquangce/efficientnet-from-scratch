@@ -50,9 +50,9 @@ int main() {
     for (int i = 0; i < inImg.rows; i++) {
         for (int j = 0; j < inImg.cols; j++) {
             // 0.012566016986966133 * (q - 131)
-            input[0][i][j] = 0.012566016986966133 * (0.012566016986966133 * (inImg.at<Vec3b>(i, j)[0] - 131) - 3);  // BRG
-            input[1][i][j] = 0.012566016986966133 * (0.012566016986966133 * (inImg.at<Vec3b>(i, j)[1] - 131) - 3);  // BRG
-            input[2][i][j] = 0.012566016986966133 * (0.012566016986966133 * (inImg.at<Vec3b>(i, j)[2] - 131) - 3);  // BRG
+            input[1][i][j] = 0.012566016986966133 * ((uint8_t)(0.012566016986966133 * (inImg.at<Vec3b>(i, j)[0] - 131)) - 3);  // BRG
+            input[0][i][j] = 0.012566016986966133 * ((uint8_t)(0.012566016986966133 * (inImg.at<Vec3b>(i, j)[1] - 131)) - 3);  // BRG
+            input[2][i][j] = 0.012566016986966133 * ((uint8_t)(0.012566016986966133 * (inImg.at<Vec3b>(i, j)[2] - 131)) - 3);  // BRG
         }
     }
 
@@ -75,7 +75,7 @@ int main() {
     int *output2dShape0;
     int8_t **output2d1;
     int *output2dShape1;
-    double *finalOutput;
+    uint8_t *finalOutput;
     int finalOutputSize;
 
     // First
@@ -252,11 +252,13 @@ int main() {
 
             if (pingpong) {
                 outputShape0 = pool2dAverage(output0, output1, outputShape1, filterShape, layerCmd[3]);
+                quantize3(output0, outputShape0, 0.0235294122248888, -128);
                 cout << "  Input shape : " << outputShape1[0] << "x" << outputShape1[1] << "x" << outputShape1[2] << endl;
                 cout << "  Filter shape: " << filterShape[0] << "x" << filterShape[1] << endl;
                 cout << "  Output shape: " << outputShape0[0] << "x" << outputShape0[1] << "x" << outputShape0[2] << endl;
             } else {
                 outputShape1 = pool2dAverage(output1, output0, outputShape0, filterShape, layerCmd[3]);
+                quantize3(output1, outputShape1, 0.0235294122248888, -128);
                 cout << "  Input shape : " << outputShape0[0] << "x" << outputShape0[1] << "x" << outputShape0[2] << endl;
                 cout << "  Filter shape: " << filterShape[0] << "x" << filterShape[1] << endl;
                 cout << "  Output shape: " << outputShape1[0] << "x" << outputShape1[1] << "x" << outputShape1[2] << endl;
@@ -371,7 +373,7 @@ int main() {
 
     auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
 
-    cout << "Execution time: " << duration.count() << " microseconds ~ " << (double)(duration.count()/1000.0) << "ms" << endl;
+    cout << "Execution time: " << duration.count() << " microseconds ~ " << (double)(duration.count() / 1000.0) << "ms" << endl;
 
     FILE *fLabel;
     fLabel = fopen("label.txt", "r");
@@ -392,13 +394,16 @@ int main() {
 
     double top = finalOutput[0];
     int topIdx = 0;
+    double sum = 0;
     for (int idx = 0; idx < finalOutputSize; idx += 1) {
+        sum += finalOutput[idx];
         if (finalOutput[idx] > top) {
             top = finalOutput[idx];
             topIdx = idx;
         }
     }
 
+    cout << sum << endl;
     cout << "Top: " << topIdx << " : " << top * 100 << " %" << endl;
     cout << labels[topIdx] << endl;
 
